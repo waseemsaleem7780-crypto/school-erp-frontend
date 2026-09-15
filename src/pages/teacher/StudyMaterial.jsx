@@ -8,6 +8,9 @@ const TeacherStudyMaterial = () => {
     const [teachers, setTeachers] = useState([]);
     const [materials, setMaterials] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
@@ -15,8 +18,11 @@ const TeacherStudyMaterial = () => {
         teacher_id: '',
         title: '',
         description: '',
-        file_path: '',
+        file: null,
+        file_url: '',
+        file_type: '',
     });
+    
     const [message, setMessage] = useState({ type: '', text: '' });
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -74,10 +80,61 @@ const TeacherStudyMaterial = () => {
         }
     };
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setForm({ ...form, file });
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!form.file) {
+            setMessage({ type: 'error', text: 'Please select a file first' });
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress(0);
+        setMessage({ type: '', text: '' });
+
+        try {
+            // FormData banao
+            const formData = new FormData();
+            formData.append('file', form.file);
+            formData.append('folder', 'study_material');
+
+            // Upload karo
+            const uploadRes = await api.post('/upload/file', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percent);
+                },
+            });
+
+            // URL mil gaya
+            const fileUrl = uploadRes.data.url;
+            const fileType = uploadRes.data.format;
+
+            setForm({ ...form, file_url: fileUrl, file_type: fileType });
+            setMessage({ type: 'success', text: 'File uploaded! Ab Save dabao.' });
+        } catch (error) {
+            setMessage({ type: 'error', text: 'File upload failed: ' + (error.response?.data?.detail || error.message) });
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
+
+        if (!form.file_url) {
+            setMessage({ type: 'error', text: 'Pehle file upload karo' });
+            setLoading(false);
+            return;
+        }
 
         try {
             await api.post('/study-material/', {
@@ -87,18 +144,26 @@ const TeacherStudyMaterial = () => {
                 teacher_id: parseInt(form.teacher_id),
                 title: form.title,
                 description: form.description,
-                file_path: form.file_path,
+                file_path: form.file_url,
             });
-            setMessage({ type: 'success', text: 'Material uploaded! ✅' });
-            setForm({ ...form, title: '', description: '', file_path: '' });
+            setMessage({ type: 'success', text: 'Study material saved! ✅' });
+            setForm({ ...form, title: '', description: '', file: null, file_url: '', file_type: '' });
             setShowForm(false);
             if (selectedClass) fetchMaterials(selectedClass);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to upload' });
+            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to save' });
         } finally {
             setLoading(false);
         }
+    };
+
+    const getFileIcon = (format) => {
+        if (!format) return '📄';
+        if (format === 'pdf') return '📕';
+        if (['jpg', 'jpeg', 'png'].includes(format)) return '🖼️';
+        if (['doc', 'docx'].includes(format)) return '📘';
+        return '📄';
     };
 
     return (
@@ -133,6 +198,7 @@ const TeacherStudyMaterial = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
+                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
                 }}>
                     {message.text}
                 </div>
@@ -190,20 +256,66 @@ const TeacherStudyMaterial = () => {
                             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Arial' }} required />
                         </div>
 
+                        {/* File Upload Section */}
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>File Path / URL</label>
-                            <input type="text" value={form.file_path} onChange={(e) => setForm({ ...form, file_path: e.target.value })} placeholder="/uploads/maths_ch1.pdf or https://..." style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>File (PDF, JPG, PNG, DOC, DOCX)</label>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <input
+                                    type="file"
+                                    onChange={handleFileSelect}
+                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px 14px',
+                                        fontSize: '14px',
+                                        border: '2px dashed #667eea',
+                                        borderRadius: '8px',
+                                        backgroundColor: '#f7fafc',
+                                        cursor: 'pointer',
+                                    }}
+                                />
+                                {form.file && (
+                                    <button
+                                        type="button"
+                                        onClick={handleUpload}
+                                        disabled={uploading}
+                                        style={{
+                                            padding: '12px 24px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            color: 'white',
+                                            background: uploading ? '#a0aec0' : '#48bb78',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: uploading ? 'not-allowed' : 'pointer',
+                                        }}
+                                    >
+                                        {uploading ? `Uploading ${uploadProgress}%` : '📤 Upload'}
+                                    </button>
+                                )}
+                            </div>
+                            {form.file && !form.file_url && (
+                                <p style={{ fontSize: '12px', color: '#718096', marginTop: '8px' }}>
+                                    Selected: {form.file.name} ({(form.file.size / 1024).toFixed(1)} KB)
+                                </p>
+                            )}
+                            {form.file_url && (
+                                <p style={{ fontSize: '12px', color: '#22543d', marginTop: '8px', fontWeight: '600' }}>
+                                    ✅ File uploaded! Ab "Save Material" dabao.
+                                </p>
+                            )}
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                {loading ? 'Uploading...' : '📤 Upload Material'}
+                            <button type="submit" disabled={loading || !form.file_url} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: (loading || !form.file_url) ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: (loading || !form.file_url) ? 'not-allowed' : 'pointer' }}>
+                                {loading ? 'Saving...' : '💾 Save Material'}
                             </button>
                         </div>
                     </form>
                 </div>
             )}
 
+            {/* Filter */}
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔍 View Materials by Class</label>
                 <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}>
@@ -212,6 +324,7 @@ const TeacherStudyMaterial = () => {
                 </select>
             </div>
 
+            {/* Materials List */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
                 {materials.length === 0 ? (
                     <div style={{ gridColumn: '1 / -1', backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
@@ -221,10 +334,23 @@ const TeacherStudyMaterial = () => {
                 ) : (
                     materials.map((m) => (
                         <div key={m.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', borderTop: '4px solid #667eea' }}>
-                            <div style={{ fontSize: '40px', marginBottom: '12px' }}>📄</div>
+                            <div style={{ fontSize: '40px', marginBottom: '12px' }}>{getFileIcon(m.file_path?.split('.').pop())}</div>
                             <h3 style={{ margin: '0 0 8px 0', color: '#1a202c' }}>{m.title}</h3>
                             <p style={{ color: '#718096', margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.5' }}>{m.description}</p>
-                            <p style={{ color: '#a0aec0', margin: '0 0 12px 0', fontSize: '12px', wordBreak: 'break-all' }}>📎 {m.file_path}</p>
+                            {m.file_path && (
+                                <a href={m.file_path} target="_blank" rel="noopener noreferrer" style={{
+                                    display: 'inline-block',
+                                    padding: '8px 16px',
+                                    backgroundColor: '#667eea',
+                                    color: 'white',
+                                    borderRadius: '8px',
+                                    textDecoration: 'none',
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                }}>
+                                    📥 View File
+                                </a>
+                            )}
                         </div>
                     ))
                 )}
