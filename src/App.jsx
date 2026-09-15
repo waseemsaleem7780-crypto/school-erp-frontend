@@ -1,64 +1,124 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './pages/auth/Login';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import Classes from './pages/Classes';
-import Sections from './pages/Sections';
-import Subjects from './pages/Subjects';
-import Attendance from './pages/Attendance';
-import Fees from './pages/Fees';
-import Teachers from './pages/Teachers';
-import Homework from './pages/Homework';
-import Exams from './pages/Exams';
-import Results from './pages/Results';
-import NoticeBoard from './pages/NoticeBoard';
-import StudyMaterial from './pages/StudyMaterial';
-import Guardians from './pages/Guardians';
-import SchoolSettings from './pages/SchoolSettings';
-import AcademicYears from './pages/AcademicYears';
-import Concession from './pages/Concession';
-import Assignments from './pages/Assignments';
-import Timetable from './pages/Timetable';
 
-// routes ke andar add karo:
+// Admin Pages
+import AdminDashboard from './pages/admin/Dashboard';
+import Students from './pages/admin/Students';
+import Classes from './pages/admin/Classes';
+import Sections from './pages/admin/Sections';
+import Subjects from './pages/admin/Subjects';
+import Attendance from './pages/admin/Attendance';
+import Fees from './pages/admin/Fees';
+import Teachers from './pages/admin/Teachers';
+import Homework from './pages/admin/Homework';
+import Assignments from './pages/admin/Assignments';
+import Exams from './pages/admin/Exams';
+import Results from './pages/admin/Results';
+import NoticeBoard from './pages/admin/NoticeBoard';
+import StudyMaterial from './pages/admin/StudyMaterial';
+import Guardians from './pages/admin/Guardians';
+import Timetable from './pages/admin/Timetable';
+import Concession from './pages/admin/Concession';
+import AcademicYears from './pages/admin/AcademicYears';
+import SchoolSettings from './pages/admin/SchoolSettings';
 
+// Teacher Pages
+import TeacherDashboard from './pages/teacher/Dashboard';
+import MyClasses from './pages/teacher/MyClasses';
+import MyStudents from './pages/teacher/MyStudents';
+import MarkAttendance from './pages/teacher/MarkAttendance';
+import TeacherHomework from './pages/teacher/Homework';
+import TeacherAssignments from './pages/teacher/Assignments';
+import MarksEntry from './pages/teacher/MarksEntry';
+import TeacherTimetable from './pages/teacher/Timetable';
+import TeacherStudyMaterial from './pages/teacher/StudyMaterial';
+import TeacherNoticeBoard from './pages/teacher/NoticeBoard';
 
-// routes ke andar add karo:
+// Student Pages
+import StudentDashboard from './pages/student/Dashboard';
+import MyAttendance from './pages/student/MyAttendance';
+import MyHomework from './pages/student/MyHomework';
+import MyAssignments from './pages/student/MyAssignments';
+import MyTimetable from './pages/student/MyTimetable';
+import MyResults from './pages/student/MyResults';
+import MyFees from './pages/student/MyFees';
+import StudentStudyMaterial from './pages/student/StudyMaterial';
+import StudentNoticeBoard from './pages/student/NoticeBoard';
 
 function App() {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/sections" element={<Sections />} />
-            <Route path="/subjects" element={<Subjects />} />
-            <Route path="/attendance" element={<Attendance />} />
-            <Route path="/fees" element={<Fees />} />
-            <Route path="/teachers" element={<Teachers />} />
-            <Route path="/homework" element={<Homework />} />
-            <Route path="/exams" element={<Exams />} />
-            <Route path="/results" element={<Results />} />
-            <Route path="/notice-board" element={<NoticeBoard />} />
-            <Route path="/study-material" element={<StudyMaterial />} />
-            <Route path="/guardians" element={<Guardians />} />
-            <Route path="/settings" element={<SchoolSettings />} />
-            <Route path="/academic-years" element={<AcademicYears />} />
-            <Route path="/concession" element={<Concession />} />
-            <Route path="/assignments" element={<Assignments />} />
-            <Route path="/timetable" element={<Timetable />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  );
+    return (
+        <AuthProvider>
+            <BrowserRouter>
+                <Toaster position="top-right" />
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+
+                    {/* Admin Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                            <Route path="/admin/students" element={<Students />} />
+                            <Route path="/admin/classes" element={<Classes />} />
+                            <Route path="/admin/sections" element={<Sections />} />
+                            <Route path="/admin/subjects" element={<Subjects />} />
+                            <Route path="/admin/teachers" element={<Teachers />} />
+                            <Route path="/admin/attendance" element={<Attendance />} />
+                            <Route path="/admin/fees" element={<Fees />} />
+                            <Route path="/admin/concession" element={<Concession />} />
+                            <Route path="/admin/homework" element={<Homework />} />
+                            <Route path="/admin/assignments" element={<Assignments />} />
+                            <Route path="/admin/exams" element={<Exams />} />
+                            <Route path="/admin/results" element={<Results />} />
+                            <Route path="/admin/notice-board" element={<NoticeBoard />} />
+                            <Route path="/admin/study-material" element={<StudyMaterial />} />
+                            <Route path="/admin/guardians" element={<Guardians />} />
+                            <Route path="/admin/timetable" element={<Timetable />} />
+                            <Route path="/admin/academic-years" element={<AcademicYears />} />
+                            <Route path="/admin/settings" element={<SchoolSettings />} />
+                        </Route>
+                    </Route>
+
+                    {/* Teacher Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+                            <Route path="/teacher/my-classes" element={<MyClasses />} />
+                            <Route path="/teacher/my-students" element={<MyStudents />} />
+                            <Route path="/teacher/mark-attendance" element={<MarkAttendance />} />
+                            <Route path="/teacher/homework" element={<TeacherHomework />} />
+                            <Route path="/teacher/assignments" element={<TeacherAssignments />} />
+                            <Route path="/teacher/marks-entry" element={<MarksEntry />} />
+                            <Route path="/teacher/timetable" element={<TeacherTimetable />} />
+                            <Route path="/teacher/study-material" element={<TeacherStudyMaterial />} />
+                            <Route path="/teacher/notice-board" element={<TeacherNoticeBoard />} />
+                        </Route>
+                    </Route>
+
+                    {/* Student Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/student/dashboard" element={<StudentDashboard />} />
+                            <Route path="/student/my-attendance" element={<MyAttendance />} />
+                            <Route path="/student/my-homework" element={<MyHomework />} />
+                            <Route path="/student/my-assignments" element={<MyAssignments />} />
+                            <Route path="/student/my-timetable" element={<MyTimetable />} />
+                            <Route path="/student/my-results" element={<MyResults />} />
+                            <Route path="/student/my-fees" element={<MyFees />} />
+                            <Route path="/student/study-material" element={<StudentStudyMaterial />} />
+                            <Route path="/student/notice-board" element={<StudentNoticeBoard />} />
+                        </Route>
+                    </Route>
+
+                    <Route path="/" element={<Navigate to="/login" />} />
+                    <Route path="*" element={<Navigate to="/login" />} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
+    );
 }
 
 export default App;

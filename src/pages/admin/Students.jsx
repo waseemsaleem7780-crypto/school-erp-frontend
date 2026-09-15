@@ -1,55 +1,74 @@
 import { useState, useEffect } from 'react';
-import api from '../api/axios';
+import api from '../../api/axios';
 
-const Subjects = () => {
-    const [subjects, setSubjects] = useState([]);
+const Students = () => {
+    const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [loading, setLoading] = useState(false);
-    const [fetching, setFetching] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showForm, setShowForm] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [form, setForm] = useState({
-        name: '',
-        code: '',
+        user_id: '',
+        roll_number: '',
         class_id: '',
+        section_id: '',
     });
 
     const fetchClasses = async () => {
         try {
             const res = await api.get('/classes/');
             setClasses(res.data);
-            if (res.data.length > 0) {
-                setSelectedClass(res.data[0].id);
-            }
         } catch (err) {
             console.error(err);
         }
     };
 
-    const fetchSubjects = async (classId) => {
+    const fetchSections = async (classId) => {
         if (!classId) {
-            setSubjects([]);
+            setSections([]);
             return;
         }
-        setFetching(true);
         try {
-            const res = await api.get(`/subjects/${classId}`);
-            setSubjects(res.data);
+            const res = await api.get(`/sections/${classId}`);
+            setSections(res.data);
         } catch (err) {
-            setSubjects([]);
-        } finally {
-            setFetching(false);
+            setSections([]);
         }
     };
+
+    const fetchStudents = async (classId) => {
+        if (!classId) {
+            setStudents([]);
+            return;
+        }
+        try {
+            const res = await api.get(`/students/${classId}`);
+            setStudents(res.data);
+        } catch (err) {
+            setStudents([]);
+        }
+    };
+
+    const filteredStudents = students.filter((s) =>
+        s.roll_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.id.toString().includes(searchTerm) ||
+        s.user_id.toString().includes(searchTerm)
+    );
 
     useEffect(() => {
         fetchClasses();
     }, []);
 
     useEffect(() => {
-        if (selectedClass) fetchSubjects(selectedClass);
+        if (form.class_id) fetchSections(form.class_id);
+    }, [form.class_id]);
+
+    useEffect(() => {
+        if (selectedClass) fetchStudents(selectedClass);
     }, [selectedClass]);
 
     const handleSubmit = async (e) => {
@@ -58,20 +77,21 @@ const Subjects = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/subjects/', {
-                name: form.name,
-                code: form.code,
+            await api.post('/students/', {
+                user_id: parseInt(form.user_id),
+                roll_number: form.roll_number,
                 class_id: parseInt(form.class_id),
+                section_id: parseInt(form.section_id),
             });
-            setForm({ name: '', code: '', class_id: '' });
-            setMessage({ type: 'success', text: 'Subject added successfully! ✅' });
+            setForm({ user_id: '', roll_number: '', class_id: '', section_id: '' });
+            setMessage({ type: 'success', text: 'Student added successfully! ✅' });
             setShowForm(false);
-            if (selectedClass) fetchSubjects(selectedClass);
+            if (selectedClass) fetchStudents(selectedClass);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to add subject',
+                text: error.response?.data?.detail || 'Failed to add student. Make sure user_id exists.',
             });
         } finally {
             setLoading(false);
@@ -83,8 +103,8 @@ const Subjects = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Subjects</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Manage subjects per class</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Students</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage all enrolled students</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
@@ -100,7 +120,7 @@ const Subjects = () => {
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Add Subject'}
+                    {showForm ? '✕ Cancel' : '+ Add Student'}
                 </button>
             </div>
 
@@ -129,27 +149,40 @@ const Subjects = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                     border: '2px solid #e2e8f0',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Subject</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Student</h3>
+
+                    <div style={{
+                        backgroundColor: '#ebf8ff',
+                        border: '1px solid #90cdf4',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        marginBottom: '20px',
+                        fontSize: '13px',
+                        color: '#2c5282',
+                    }}>
+                        💡 <strong>Pehle User banao:</strong> Swagger mein <code>POST /api/auth/register</code> se Student user banao, phir yahan uski ID daalo.
+                    </div>
+
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject Name</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>User ID</label>
                             <input
-                                type="text"
-                                value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                placeholder="e.g., Mathematics"
+                                type="number"
+                                value={form.user_id}
+                                onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+                                placeholder="e.g., 3"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
                             />
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject Code</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Roll Number</label>
                             <input
                                 type="text"
-                                value={form.code}
-                                onChange={(e) => setForm({ ...form, code: e.target.value })}
-                                placeholder="e.g., MATH101"
+                                value={form.roll_number}
+                                onChange={(e) => setForm({ ...form, roll_number: e.target.value })}
+                                placeholder="e.g., 101"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
                             />
@@ -159,13 +192,29 @@ const Subjects = () => {
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
                             <select
                                 value={form.class_id}
-                                onChange={(e) => setForm({ ...form, class_id: e.target.value })}
+                                onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '' })}
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                 required
                             >
                                 <option value="">Select Class</option>
                                 {classes.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Section</label>
+                            <select
+                                value={form.section_id}
+                                onChange={(e) => setForm({ ...form, section_id: e.target.value })}
+                                disabled={!form.class_id}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                required
+                            >
+                                <option value="">Select Section</option>
+                                {sections.map((s) => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -185,7 +234,7 @@ const Subjects = () => {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
-                                {loading ? 'Saving...' : '💾 Save Subject'}
+                                {loading ? 'Saving...' : '💾 Save Student'}
                             </button>
                         </div>
                     </form>
@@ -195,7 +244,7 @@ const Subjects = () => {
             {/* Filter by Class */}
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔍 Filter by Class
+                    🔍 Filter Students by Class
                 </label>
                 <select
                     value={selectedClass}
@@ -209,47 +258,69 @@ const Subjects = () => {
                 </select>
             </div>
 
-            {/* Subjects List */}
+            {/* Search Box */}
+            {selectedClass && (
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                        🔎 Search Students
+                    </label>
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search by roll number, ID, or user ID..."
+                        style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: '15px',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '10px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                </div>
+            )}
+
+            {/* Students List */}
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>Subjects ({subjects.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>Students List ({filteredStudents.length})</h3>
                 </div>
 
-                {fetching ? (
-                    <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
-                ) : subjects.length === 0 ? (
+                {!selectedClass ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📖</div>
-                        <p style={{ color: '#718096' }}>No subjects yet for this class</p>
+                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
+                        <p style={{ color: '#718096' }}>Select a class above to view students</p>
+                    </div>
+                ) : filteredStudents.length === 0 ? (
+                    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
+                        <p style={{ color: '#718096' }}>
+                            {searchTerm ? 'No students match your search' : 'No students in this class yet'}
+                        </p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Name</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Code</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>User ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Section ID</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {subjects.map((s) => (
+                            {filteredStudents.map((s) => (
                                 <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.name}</td>
-                                    <td style={{ padding: '16px 24px' }}>
-                                        <span style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '20px',
-                                            backgroundColor: '#ebf8ff',
-                                            color: '#2c5282',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                        }}>
-                                            {s.code}
-                                        </span>
-                                    </td>
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.roll_number}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.user_id}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{s.class_id}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -260,4 +331,4 @@ const Subjects = () => {
     );
 };
 
-export default Subjects;
+export default Students;

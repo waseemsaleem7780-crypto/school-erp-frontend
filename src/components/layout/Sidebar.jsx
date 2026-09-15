@@ -1,61 +1,133 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import {
-    LayoutDashboard, Users, GraduationCap, BookOpen,
-    CalendarCheck, DollarSign, UserCheck, LogOut
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
-    const { logout } = useAuth();
+    const navigate = useNavigate();
+    const token = localStorage.getItem('token');
+    
+    let role = 'admin';
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        role = payload.role;
+    } catch (err) {
+        role = 'admin';
+    }
 
-    const menuItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Students', path: '/students', icon: Users },
-        { name: 'Classes', path: '/classes', icon: GraduationCap },
-        { name: 'Attendance', path: '/attendance', icon: CalendarCheck },
-        { name: 'Fees', path: '/fees', icon: DollarSign },
-        { name: 'Teachers', path: '/teachers', icon: UserCheck },
+    const adminMenu = [
+        { name: 'Dashboard', path: '/admin/dashboard' },
+        { name: 'Students', path: '/admin/students' },
+        { name: 'Classes', path: '/admin/classes' },
+        { name: 'Sections', path: '/admin/sections' },
+        { name: 'Subjects', path: '/admin/subjects' },
+        { name: 'Teachers', path: '/admin/teachers' },
+        { name: 'Attendance', path: '/admin/attendance' },
+        { name: 'Fees', path: '/admin/fees' },
+        { name: 'Concession', path: '/admin/concession' },
+        { name: 'Homework', path: '/admin/homework' },
+        { name: 'Assignments', path: '/admin/assignments' },
+        { name: 'Exams', path: '/admin/exams' },
+        { name: 'Results', path: '/admin/results' },
+        { name: 'Notice Board', path: '/admin/notice-board' },
+        { name: 'Study Material', path: '/admin/study-material' },
+        { name: 'Guardians', path: '/admin/guardians' },
+        { name: 'Timetable', path: '/admin/timetable' },
+        { name: 'Academic Years', path: '/admin/academic-years' },
+        { name: 'School Settings', path: '/admin/settings' },
     ];
 
+    const teacherMenu = [
+        { name: 'Dashboard', path: '/teacher/dashboard' },
+        { name: 'My Classes', path: '/teacher/my-classes' },
+        { name: 'My Students', path: '/teacher/my-students' },
+        { name: 'Mark Attendance', path: '/teacher/mark-attendance' },
+        { name: 'Homework', path: '/teacher/homework' },
+        { name: 'Assignments', path: '/teacher/assignments' },
+        { name: 'Marks Entry', path: '/teacher/marks-entry' },
+        { name: 'Timetable', path: '/teacher/timetable' },
+        { name: 'Study Material', path: '/teacher/study-material' },
+        { name: 'Notice Board', path: '/teacher/notice-board' },
+    ];
+
+    const studentMenu = [
+        { name: 'Dashboard', path: '/student/dashboard' },
+        { name: 'My Attendance', path: '/student/my-attendance' },
+        { name: 'My Homework', path: '/student/my-homework' },
+        { name: 'My Assignments', path: '/student/my-assignments' },
+        { name: 'My Timetable', path: '/student/my-timetable' },
+        { name: 'My Results', path: '/student/my-results' },
+        { name: 'My Fees', path: '/student/my-fees' },
+        { name: 'Study Material', path: '/student/study-material' },
+        { name: 'Notice Board', path: '/student/notice-board' },
+    ];
+
+    const menuItems = role === 'admin' ? adminMenu : role === 'teacher' ? teacherMenu : studentMenu;
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
+
+    const roleLabel = role === 'admin' ? 'Admin' : role === 'teacher' ? 'Teacher' : 'Student';
+
     return (
-        <aside className="w-64 bg-slate-900 text-white min-h-screen flex flex-col">
-            <div className="p-6 border-b border-slate-800">
-                <h1 className="text-xl font-bold flex items-center gap-2">
-                    <GraduationCap className="text-indigo-400" />
-                    School ERP
-                </h1>
-                <p className="text-xs text-slate-400 mt-1">Management System</p>
+        <div style={{
+            width: '250px',
+            backgroundColor: '#1e293b',
+            color: 'white',
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            overflowY: 'auto',
+        }}>
+            <div style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
+                <h2 style={{ margin: 0, fontSize: '20px' }}>School ERP</h2>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
+                    {roleLabel} Panel
+                </p>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1">
+            <nav style={{ flex: 1, padding: '12px' }}>
                 {menuItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                                isActive
-                                    ? 'bg-indigo-600 text-white shadow-lg'
-                                    : 'text-slate-300 hover:bg-slate-800'
-                            }`
-                        }
+                        style={({ isActive }) => ({
+                            display: 'block',
+                            padding: '10px 14px',
+                            marginBottom: '4px',
+                            borderRadius: '8px',
+                            textDecoration: 'none',
+                            color: 'white',
+                            fontSize: '14px',
+                            backgroundColor: isActive ? '#4f46e5' : 'transparent',
+                        })}
                     >
-                        <item.icon size={20} />
-                        <span className="font-medium">{item.name}</span>
+                        {item.name}
                     </NavLink>
                 ))}
             </nav>
 
-            <div className="p-4 border-t border-slate-800">
+            <div style={{ padding: '12px', borderTop: '1px solid #334155' }}>
                 <button
-                    onClick={logout}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-red-400 hover:bg-slate-800 transition-all"
+                    onClick={handleLogout}
+                    style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        textAlign: 'left',
+                    }}
                 >
-                    <LogOut size={20} />
-                    <span className="font-medium">Logout</span>
+                    Logout
                 </button>
             </div>
-        </aside>
+        </div>
     );
 };
 
