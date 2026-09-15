@@ -73,22 +73,28 @@ const Sidebar = () => {
             width: '250px',
             backgroundColor: '#1e293b',
             color: 'white',
-            minHeight: '100vh',
+            height: '100vh',
             display: 'flex',
             flexDirection: 'column',
             position: 'fixed',
             left: 0,
             top: 0,
-            overflowY: 'auto',
         }}>
-            <div style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
+            {/* Header - Fixed */}
+            <div style={{ padding: '20px', borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <h2 style={{ margin: 0, fontSize: '20px' }}>School ERP</h2>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
                     {roleLabel} Panel
                 </p>
             </div>
 
-            <nav style={{ flex: 1, padding: '12px' }}>
+            {/* Menu - Scrollable */}
+            <nav style={{ 
+                flex: 1, 
+                padding: '12px', 
+                overflowY: 'auto',
+                overflowX: 'hidden',
+            }}>
                 {menuItems.map((item) => (
                     <NavLink
                         key={item.path}
@@ -109,7 +115,8 @@ const Sidebar = () => {
                 ))}
             </nav>
 
-            <div style={{ padding: '12px', borderTop: '1px solid #334155' }}>
+            {/* Logout - Fixed Bottom */}
+            <div style={{ padding: '12px', borderTop: '1px solid #334155', flexShrink: 0 }}>
                 <button
                     onClick={handleLogout}
                     style={{
@@ -124,7 +131,7 @@ const Sidebar = () => {
                         textAlign: 'left',
                     }}
                 >
-                    Logout
+                    🚪 Logout
                 </button>
             </div>
         </div>
