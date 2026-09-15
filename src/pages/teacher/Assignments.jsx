@@ -7,6 +7,9 @@ const TeacherAssignments = () => {
     const [students, setStudents] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [assignments, setAssignments] = useState([]);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
@@ -15,7 +18,10 @@ const TeacherAssignments = () => {
         title: '',
         description: '',
         deadline: '',
+        file: null,
+        file_url: '',
     });
+    
     const [message, setMessage] = useState({ type: '', text: '' });
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -69,6 +75,45 @@ const TeacherAssignments = () => {
         }
     };
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setForm({ ...form, file });
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!form.file) {
+            setMessage({ type: 'error', text: 'Please select a file first' });
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress(0);
+        setMessage({ type: '', text: '' });
+
+        try {
+            const formData = new FormData();
+            formData.append('file', form.file);
+            formData.append('folder', 'assignments');
+
+            const uploadRes = await api.post('/upload/file', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percent);
+                },
+            });
+
+            setForm({ ...form, file_url: uploadRes.data.url });
+            setMessage({ type: 'success', text: 'File uploaded! Ab Save dabao.' });
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Upload failed: ' + (error.response?.data?.detail || error.message) });
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -83,13 +128,13 @@ const TeacherAssignments = () => {
                 description: form.description,
                 deadline: form.deadline,
             });
-            setMessage({ type: 'success', text: 'Assignment added! ✅' });
-            setForm({ ...form, title: '', description: '', deadline: '' });
+            setMessage({ type: 'success', text: 'Assignment saved! ✅' });
+            setForm({ ...form, title: '', description: '', deadline: '', file: null, file_url: '' });
             setShowForm(false);
             if (form.student_id) fetchAssignments(form.student_id);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to add assignment' });
+            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to save' });
         } finally {
             setLoading(false);
         }
@@ -116,7 +161,7 @@ const TeacherAssignments = () => {
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Add Assignment'}
+                    {showForm ? '✕ Cancel' : '+ Create Assignment'}
                 </button>
             </div>
 
@@ -187,6 +232,50 @@ const TeacherAssignments = () => {
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Deadline</label>
                             <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                        </div>
+
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Assignment File (Optional - PDF, JPG, PNG, DOC)</label>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <input
+                                    type="file"
+                                    onChange={handleFileSelect}
+                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px 14px',
+                                        fontSize: '14px',
+                                        border: '2px dashed #667eea',
+                                        borderRadius: '8px',
+                                        backgroundColor: '#f7fafc',
+                                        cursor: 'pointer',
+                                    }}
+                                />
+                                {form.file && (
+                                    <button
+                                        type="button"
+                                        onClick={handleUpload}
+                                        disabled={uploading}
+                                        style={{
+                                            padding: '12px 24px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            color: 'white',
+                                            background: uploading ? '#a0aec0' : '#48bb78',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: uploading ? 'not-allowed' : 'pointer',
+                                        }}
+                                    >
+                                        {uploading ? `Uploading ${uploadProgress}%` : '📤 Upload'}
+                                    </button>
+                                )}
+                            </div>
+                            {form.file_url && (
+                                <p style={{ fontSize: '12px', color: '#22543d', marginTop: '8px', fontWeight: '600' }}>
+                                    ✅ File uploaded! Ab "Save Assignment" dabao.
+                                </p>
+                            )}
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>
