@@ -3,28 +3,31 @@ import api from '../../api/axios';
 
 const Classes = () => {
     const [classes, setClasses] = useState([]);
-    const [name, setName] = useState('');
-    const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [editingId, setEditingId] = useState(null);
 
-    const fetchClasses = async () => {
-        try {
-            const response = await api.get('/classes/');
-            setClasses(response.data);
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Failed to load classes' });
-        } finally {
-            setFetching(false);
-        }
-    };
+    const [form, setForm] = useState({
+        name: '',
+    });
 
     useEffect(() => {
         fetchClasses();
     }, []);
+
+    const fetchClasses = async () => {
+        try {
+            const res = await api.get('/classes/');
+            setClasses(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setFetching(false);
+        }
+    };
 
     const filteredClasses = classes.filter((c) =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,13 +41,17 @@ const Classes = () => {
 
         try {
             if (editingId) {
-                await api.put(`/classes/${editingId}`, { name });
+                await api.put(`/classes/${editingId}`, {
+                    name: form.name,
+                });
                 setMessage({ type: 'success', text: 'Class updated! ✅' });
             } else {
-                await api.post('/classes/', { name });
+                await api.post('/classes/', {
+                    name: form.name,
+                });
                 setMessage({ type: 'success', text: 'Class added! ✅' });
             }
-            setName('');
+            setForm({ name: '' });
             setEditingId(null);
             setShowForm(false);
             fetchClasses();
@@ -60,7 +67,7 @@ const Classes = () => {
     };
 
     const handleEdit = (cls) => {
-        setName(cls.name);
+        setForm({ name: cls.name });
         setEditingId(cls.id);
         setShowForm(true);
     };
@@ -79,28 +86,17 @@ const Classes = () => {
     };
 
     const handleCancel = () => {
-        setName('');
+        setForm({ name: '' });
         setEditingId(null);
         setShowForm(false);
     };
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '30px',
-                flexWrap: 'wrap',
-                gap: '16px',
-            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>
-                        Classes
-                    </h1>
-                    <p style={{ color: '#718096', margin: 0 }}>
-                        Manage all school classes
-                    </p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Classes</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage all classes (Grade 1, 2, 3...)</p>
                 </div>
                 <button
                     onClick={() => showForm ? handleCancel() : setShowForm(true)}
@@ -143,29 +139,24 @@ const Classes = () => {
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
                         {editingId ? 'Edit Class' : 'Add New Class'}
                     </h3>
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter class name (e.g., Class 5)"
-                            style={{
-                                flex: 1,
-                                minWidth: '200px',
-                                padding: '14px 16px',
-                                fontSize: '15px',
-                                border: '2px solid #e2e8f0',
-                                borderRadius: '10px',
-                                outline: 'none',
-                                boxSizing: 'border-box',
-                            }}
-                            required
-                        />
+                    <form onSubmit={handleSubmit}>
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class Name</label>
+                            <input
+                                type="text"
+                                value={form.name}
+                                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                placeholder="e.g., Grade 1"
+                                style={{ width: '100%', maxWidth: '400px', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                            />
+                        </div>
+
                         <button
                             type="submit"
                             disabled={loading}
                             style={{
-                                padding: '14px 28px',
+                                padding: '14px 32px',
                                 fontSize: '15px',
                                 fontWeight: '600',
                                 color: 'white',
@@ -175,7 +166,7 @@ const Classes = () => {
                                 cursor: loading ? 'not-allowed' : 'pointer',
                             }}
                         >
-                            {loading ? 'Saving...' : (editingId ? '💾 Update Class' : 'Save Class')}
+                            {loading ? 'Saving...' : (editingId ? '💾 Update Class' : '💾 Save Class')}
                         </button>
                     </form>
                 </div>
@@ -200,13 +191,7 @@ const Classes = () => {
                 </div>
             </div>
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '20px 24px',
-                marginBottom: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                     🔎 Search Classes
                 </label>
@@ -214,7 +199,7 @@ const Classes = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by class name or ID..."
+                    placeholder="Search by name or ID..."
                     style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -227,12 +212,7 @@ const Classes = () => {
                 />
             </div>
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                overflow: 'hidden',
-            }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                     <h3 style={{ margin: 0, color: '#1a202c' }}>All Classes ({filteredClasses.length})</h3>
                 </div>
@@ -243,27 +223,25 @@ const Classes = () => {
                     </div>
                 ) : filteredClasses.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
-                        <p style={{ color: '#718096', fontSize: '15px' }}>
-                            {searchTerm ? 'No classes match your search' : 'No classes yet. Click "Add Class" to create your first one!'}
+                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
+                        <p style={{ color: '#718096' }}>
+                            {searchTerm ? 'No classes match your search' : 'No classes yet'}
                         </p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>Class Name</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>Actions</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class Name</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredClasses.map((c) => (
                                 <tr key={c.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{c.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>
-                                        {c.name}
-                                    </td>
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{c.name}</td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button
