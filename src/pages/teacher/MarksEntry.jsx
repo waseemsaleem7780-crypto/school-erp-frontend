@@ -68,16 +68,6 @@ const MarksEntry = () => {
         }
     };
 
-    const fetchResults = async (studentId) => {
-        if (!studentId) return;
-        try {
-            const res = await api.get(`/results/student/${studentId}`);
-            setResults(res.data);
-        } catch (err) {
-            setResults([]);
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -95,7 +85,6 @@ const MarksEntry = () => {
             setMessage({ type: 'success', text: 'Marks saved! ✅' });
             setForm({ ...form, marks_obtained: '', grade: '', remarks: '' });
             setShowForm(false);
-            if (form.student_id) fetchResults(form.student_id);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to save marks' });
@@ -136,7 +125,6 @@ const MarksEntry = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
                 }}>
                     {message.text}
                 </div>
