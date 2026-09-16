@@ -6,6 +6,7 @@ const Students = () => {
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
+    const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showForm, setShowForm] = useState(false);
@@ -18,6 +19,20 @@ const Students = () => {
         section_id: '',
     });
 
+    useEffect(() => {
+        fetchClasses();
+        fetchAllStudents();
+    }, []);
+
+    useEffect(() => {
+        if (form.class_id) fetchSections(form.class_id);
+    }, [form.class_id]);
+
+    useEffect(() => {
+        if (selectedClass) fetchStudents(selectedClass);
+        else fetchAllStudents();
+    }, [selectedClass]);
+
     const fetchClasses = async () => {
         try {
             const res = await api.get('/classes/');
@@ -27,11 +42,16 @@ const Students = () => {
         }
     };
 
-    const fetchSections = async (classId) => {
-        if (!classId) {
-            setSections([]);
-            return;
+    const fetchAllStudents = async () => {
+        try {
+            const res = await api.get('/students/');
+            setStudents(res.data);
+        } catch (err) {
+            console.error(err);
         }
+    };
+
+    const fetchSections = async (classId) => {
         try {
             const res = await api.get(`/sections/${classId}`);
             setSections(res.data);
@@ -41,10 +61,6 @@ const Students = () => {
     };
 
     const fetchStudents = async (classId) => {
-        if (!classId) {
-            setStudents([]);
-            return;
-        }
         try {
             const res = await api.get(`/students/${classId}`);
             setStudents(res.data);
@@ -59,55 +75,83 @@ const Students = () => {
         s.user_id.toString().includes(searchTerm)
     );
 
-    useEffect(() => {
-        fetchClasses();
-    }, []);
-
-    useEffect(() => {
-        if (form.class_id) fetchSections(form.class_id);
-    }, [form.class_id]);
-
-    useEffect(() => {
-        if (selectedClass) fetchStudents(selectedClass);
-    }, [selectedClass]);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/students/', {
-                user_id: parseInt(form.user_id),
-                roll_number: form.roll_number,
-                class_id: parseInt(form.class_id),
-                section_id: parseInt(form.section_id),
-            });
+            if (editingId) {
+                await api.put(`/students/${editingId}`, {
+                    user_id: parseInt(form.user_id) || 1,
+                    roll_number: form.roll_number,
+                    class_id: parseInt(form.class_id),
+                    section_id: parseInt(form.section_id),
+                });
+                setMessage({ type: 'success', text: 'Student updated! ✅' });
+            } else {
+                await api.post('/students/', {
+                    user_id: parseInt(form.user_id),
+                    roll_number: form.roll_number,
+                    class_id: parseInt(form.class_id),
+                    section_id: parseInt(form.section_id),
+                });
+                setMessage({ type: 'success', text: 'Student added! ✅' });
+            }
             setForm({ user_id: '', roll_number: '', class_id: '', section_id: '' });
-            setMessage({ type: 'success', text: 'Student added successfully! ✅' });
+            setEditingId(null);
             setShowForm(false);
-            if (selectedClass) fetchStudents(selectedClass);
+            fetchAllStudents();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to add student. Make sure user_id exists.',
+                text: error.response?.data?.detail || 'Failed to save student',
             });
         } finally {
             setLoading(false);
         }
     };
 
+    const handleEdit = (student) => {
+        setForm({
+            user_id: student.user_id,
+            roll_number: student.roll_number,
+            class_id: student.class_id,
+            section_id: student.section_id,
+        });
+        setEditingId(student.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Kya aap waqai ye student delete karna chahte ho?')) return;
+
+        try {
+            await api.delete(`/students/${id}`);
+            setMessage({ type: 'success', text: 'Student deleted! ✅' });
+            fetchAllStudents();
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Delete failed: ' + (error.response?.data?.detail || error.message) });
+        }
+    };
+
+    const handleCancel = () => {
+        setForm({ user_id: '', roll_number: '', class_id: '', section_id: '' });
+        setEditingId(null);
+        setShowForm(false);
+    };
+
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                     <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Students</h1>
                     <p style={{ color: '#718096', margin: 0 }}>Manage all enrolled students</p>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? handleCancel() : setShowForm(true)}
                     style={{
                         padding: '12px 24px',
                         fontSize: '15px',
@@ -124,7 +168,6 @@ const Students = () => {
                 </button>
             </div>
 
-            {/* Message */}
             {message.text && (
                 <div style={{
                     padding: '14px 20px',
@@ -132,14 +175,11 @@ const Students = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
-                    fontSize: '14px',
                 }}>
                     {message.text}
                 </div>
             )}
 
-            {/* Add Form */}
             {showForm && (
                 <div style={{
                     backgroundColor: 'white',
@@ -147,9 +187,10 @@ const Students = () => {
                     padding: '24px',
                     marginBottom: '24px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    border: '2px solid #e2e8f0',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Student</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>
+                        {editingId ? 'Edit Student' : 'Add New Student'}
+                    </h3>
 
                     <div style={{
                         backgroundColor: '#ebf8ff',
@@ -234,14 +275,13 @@ const Students = () => {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
-                                {loading ? 'Saving...' : '💾 Save Student'}
+                                {loading ? 'Saving...' : (editingId ? '💾 Update Student' : '💾 Save Student')}
                             </button>
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* Filter by Class */}
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                     🔍 Filter Students by Class
@@ -251,55 +291,44 @@ const Students = () => {
                     onChange={(e) => setSelectedClass(e.target.value)}
                     style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
                 >
-                    <option value="">-- Select Class --</option>
+                    <option value="">-- All Students --</option>
                     {classes.map((c) => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                 </select>
             </div>
 
-            {/* Search Box */}
-            {selectedClass && (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                        🔎 Search Students
-                    </label>
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search by roll number, ID, or user ID..."
-                        style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            fontSize: '15px',
-                            border: '2px solid #e2e8f0',
-                            borderRadius: '10px',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                    />
-                </div>
-            )}
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                    🔎 Search Students
+                </label>
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by roll number, ID, or user ID..."
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: '15px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '10px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                    }}
+                />
+            </div>
 
-            {/* Students List */}
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                     <h3 style={{ margin: 0, color: '#1a202c' }}>Students List ({filteredStudents.length})</h3>
                 </div>
 
-                {!selectedClass ? (
+                {filteredStudents.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
-                        <p style={{ color: '#718096' }}>Select a class above to view students</p>
-                    </div>
-                ) : filteredStudents.length === 0 ? (
-                    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
                         <p style={{ color: '#718096' }}>
-                            {searchTerm ? 'No students match your search' : 'No students in this class yet'}
+                            {searchTerm ? 'No students match your search' : 'No students yet'}
                         </p>
                     </div>
                 ) : (
@@ -311,6 +340,7 @@ const Students = () => {
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>User ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Section ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -321,6 +351,40 @@ const Students = () => {
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{s.user_id}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{s.class_id}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id}</td>
+                                    <td style={{ padding: '16px 24px' }}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => handleEdit(s)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#667eea',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                ✏️ Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(s.id)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#dc2626',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                🗑️ Delete
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
