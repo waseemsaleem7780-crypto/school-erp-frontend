@@ -4,90 +4,158 @@ import api from '../../api/axios';
 const Subjects = () => {
     const [subjects, setSubjects] = useState([]);
     const [classes, setClasses] = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
+    const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [fetching, setFetching] = useState(false);
+    const [fetching, setFetching] = useState(true);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showForm, setShowForm] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [form, setForm] = useState({
         name: '',
-        code: '',
         class_id: '',
+        teacher_id: '',
     });
+
+    useEffect(() => {
+        fetchClasses();
+        fetchTeachers();
+        fetchAllSubjects();
+    }, []);
+
+    useEffect(() => {
+        if (selectedClass) fetchSubjectsByClass(selectedClass);
+        else fetchAllSubjects();
+    }, [selectedClass]);
 
     const fetchClasses = async () => {
         try {
             const res = await api.get('/classes/');
             setClasses(res.data);
-            if (res.data.length > 0) {
-                setSelectedClass(res.data[0].id);
-            }
         } catch (err) {
             console.error(err);
         }
     };
 
-    const fetchSubjects = async (classId) => {
-        if (!classId) {
-            setSubjects([]);
-            return;
-        }
-        setFetching(true);
+    const fetchTeachers = async () => {
         try {
-            const res = await api.get(`/subjects/${classId}`);
+            const res = await api.get('/teachers/');
+            setTeachers(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchAllSubjects = async () => {
+        try {
+            const res = await api.get('/subjects/');
             setSubjects(res.data);
         } catch (err) {
-            setSubjects([]);
+            console.error(err);
         } finally {
             setFetching(false);
         }
     };
 
-    useEffect(() => {
-        fetchClasses();
-    }, []);
+    const fetchSubjectsByClass = async (classId) => {
+        try {
+            const res = await api.get(`/subjects/class/${classId}`);
+            setSubjects(res.data);
+        } catch (err) {
+            setSubjects([]);
+        }
+    };
 
-    useEffect(() => {
-        if (selectedClass) fetchSubjects(selectedClass);
-    }, [selectedClass]);
+    const filteredSubjects = subjects.filter((s) =>
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.id.toString().includes(searchTerm)
+    );
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
 
+        const payload = {
+            name: form.name,
+            class_id: parseInt(form.class_id),
+            teacher_id: form.teacher_id ? parseInt(form.teacher_id) : null,
+        };
+
         try {
-            await api.post('/subjects/', {
-                name: form.name,
-                code: form.code,
-                class_id: parseInt(form.class_id),
-            });
-            setForm({ name: '', code: '', class_id: '' });
-            setMessage({ type: 'success', text: 'Subject added successfully! ✅' });
+            if (editingId) {
+                await api.put(`/subjects/${editingId}`, payload);
+                setMessage({ type: 'success', text: 'Subject updated! ✅' });
+            } else {
+                await api.post('/subjects/', payload);
+                setMessage({ type: 'success', text: 'Subject added! ✅' });
+            }
+            setForm({ name: '', class_id: '', teacher_id: '' });
+            setEditingId(null);
             setShowForm(false);
-            if (selectedClass) fetchSubjects(selectedClass);
+            fetchAllSubjects();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to add subject',
+                text: error.response?.data?.detail || 'Failed to save subject',
             });
         } finally {
             setLoading(false);
         }
     };
 
+    const handleEdit = (subject) => {
+        setForm({
+            name: subject.name,
+            class_id: subject.class_id,
+            teacher_id: subject.teacher_id || '',
+        });
+        setEditingId(subject.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Kya aap waqai ye subject delete karna chahte ho?')) return;
+
+        try {
+            await api.delete(`/subjects/${id}`);
+            setMessage({ type: 'success', text: 'Subject deleted! ✅' });
+            fetchAllSubjects();
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Delete failed: ' + (error.response?.data?.detail || error.message) });
+        }
+    };
+
+    const handleCancel = () => {
+        setForm({ name: '', class_id: '', teacher_id: '' });
+        setEditingId(null);
+        setShowForm(false);
+    };
+
+    const getClassName = (classId) => {
+        const cls = classes.find((c) => c.id === classId);
+        return cls ? cls.name : `Class #${classId}`;
+    };
+
+    const getTeacherName = (teacherId) => {
+        if (!teacherId) return '—';
+        const t = teachers.find((t) => t.id === teacherId);
+        return t ? `Teacher #${t.id} (User ${t.user_id})` : `Teacher #${teacherId}`;
+    };
+
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                     <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Subjects</h1>
                     <p style={{ color: '#718096', margin: 0 }}>Manage subjects per class</p>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? handleCancel() : setShowForm(true)}
                     style={{
                         padding: '12px 24px',
                         fontSize: '15px',
@@ -104,7 +172,6 @@ const Subjects = () => {
                 </button>
             </div>
 
-            {/* Message */}
             {message.text && (
                 <div style={{
                     padding: '14px 20px',
@@ -112,14 +179,11 @@ const Subjects = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
-                    fontSize: '14px',
                 }}>
                     {message.text}
                 </div>
             )}
 
-            {/* Add Form */}
             {showForm && (
                 <div style={{
                     backgroundColor: 'white',
@@ -127,9 +191,10 @@ const Subjects = () => {
                     padding: '24px',
                     marginBottom: '24px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    border: '2px solid #e2e8f0',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Subject</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>
+                        {editingId ? 'Edit Subject' : 'Add New Subject'}
+                    </h3>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject Name</label>
@@ -138,18 +203,6 @@ const Subjects = () => {
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                                 placeholder="e.g., Mathematics"
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject Code</label>
-                            <input
-                                type="text"
-                                value={form.code}
-                                onChange={(e) => setForm({ ...form, code: e.target.value })}
-                                placeholder="e.g., MATH101"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
                             />
@@ -170,6 +223,22 @@ const Subjects = () => {
                             </select>
                         </div>
 
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Teacher (Optional)</label>
+                            <select
+                                value={form.teacher_id}
+                                onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                            >
+                                <option value="">-- No Teacher --</option>
+                                {teachers.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        Teacher #{t.id} (User {t.user_id})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div style={{ gridColumn: '1 / -1' }}>
                             <button
                                 type="submit"
@@ -185,71 +254,138 @@ const Subjects = () => {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
-                                {loading ? 'Saving...' : '💾 Save Subject'}
+                                {loading ? 'Saving...' : (editingId ? '💾 Update Subject' : '💾 Save Subject')}
                             </button>
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* Filter by Class */}
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔍 Filter by Class
-                </label>
-                <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
-                >
-                    <option value="">-- Select Class --</option>
-                    {classes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+            }}>
+                <div style={{ fontSize: '36px' }}>📚</div>
+                <div>
+                    <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total Subjects</p>
+                    <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
+                        {subjects.length}
+                    </p>
+                </div>
             </div>
 
-            {/* Subjects List */}
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                        🔎 Search Subjects
+                    </label>
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search by name or ID..."
+                        style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            fontSize: '15px',
+                            border: '2px solid #e2e8f0',
+                            borderRadius: '10px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                        }}
+                    />
+                </div>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                        🔍 Filter by Class
+                    </label>
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => setSelectedClass(e.target.value)}
+                        style={{ width: '100%', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
+                    >
+                        <option value="">-- All Classes --</option>
+                        {classes.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>Subjects ({subjects.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>All Subjects ({filteredSubjects.length})</h3>
                 </div>
 
                 {fetching ? (
-                    <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
-                ) : subjects.length === 0 ? (
+                    <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
+                        Loading...
+                    </div>
+                ) : filteredSubjects.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📖</div>
-                        <p style={{ color: '#718096' }}>No subjects yet for this class</p>
+                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
+                        <p style={{ color: '#718096' }}>
+                            {searchTerm ? 'No subjects match your search' : 'No subjects yet'}
+                        </p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Name</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Code</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Subject</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Teacher</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {subjects.map((s) => (
+                            {filteredSubjects.map((s) => (
                                 <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
                                     <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.name}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getTeacherName(s.teacher_id)}</td>
                                     <td style={{ padding: '16px 24px' }}>
-                                        <span style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '20px',
-                                            backgroundColor: '#ebf8ff',
-                                            color: '#2c5282',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                        }}>
-                                            {s.code}
-                                        </span>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => handleEdit(s)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#667eea',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                ✏️ Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(s.id)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#dc2626',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                🗑️ Delete
+                                            </button>
+                                        </div>
                                     </td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.class_id}</td>
                                 </tr>
                             ))}
                         </tbody>
