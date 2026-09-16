@@ -5,151 +5,158 @@ const Attendance = () => {
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
-    const [teachers, setTeachers] = useState([]);
-    const [history, setHistory] = useState([]);
-    const [view, setView] = useState('mark'); // 'mark' or 'history'
-
-    const [form, setForm] = useState({
-        class_id: '',
-        section_id: '',
-        student_id: '',
-        teacher_id: '',
-        date: new Date().toISOString().split('T')[0],
-        status: 'present',
-    });
-
+    const [attendanceMap, setAttendanceMap] = useState({});
+    
+    const [selectedDate, setSelectedDate] = useState(
+        new Date().toISOString().split('T')[0]
+    );
+    const [selectedClass, setSelectedClass] = useState('');
+    const [selectedSection, setSelectedSection] = useState('');
+    
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [stats, setStats] = useState(null);
+
+    useEffect(() => {
+        fetchClasses();
+        fetchStats();
+    }, []);
+
+    useEffect(() => {
+        if (selectedClass) {
+            fetchSections(selectedClass);
+            setSelectedSection('');
+        } else {
+            setSections([]);
+            setStudents([]);
+        }
+    }, [selectedClass]);
 
     const fetchClasses = async () => {
         try {
             const res = await api.get('/classes/');
             setClasses(res.data);
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchTeachers = async () => {
-        try {
-            const res = await api.get('/teachers/');
-            setTeachers(res.data);
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const fetchSections = async (classId) => {
-        if (!classId) { setSections([]); return; }
         try {
             const res = await api.get(`/sections/${classId}`);
             setSections(res.data);
-        } catch (err) { setSections([]); }
-    };
-
-    const fetchStudents = async (classId) => {
-        if (!classId) { setStudents([]); return; }
-        try {
-            const res = await api.get(`/students/${classId}`);
-            setStudents(res.data);
-        } catch (err) { setStudents([]); }
-    };
-
-    const fetchHistory = async (studentId) => {
-        if (!studentId) { setHistory([]); return; }
-        try {
-            const res = await api.get(`/attendance/student/${studentId}`);
-            setHistory(res.data);
-        } catch (err) { setHistory([]); }
-    };
-
-    useEffect(() => {
-        fetchClasses();
-        fetchTeachers();
-    }, []);
-
-    useEffect(() => {
-        if (form.class_id) {
-            fetchSections(form.class_id);
-            fetchStudents(form.class_id);
+        } catch (err) {
+            setSections([]);
         }
-    }, [form.class_id]);
+    };
 
-    useEffect(() => {
-        if (form.student_id) fetchHistory(form.student_id);
-    }, [form.student_id]);
+    const fetchStats = async () => {
+        try {
+            const res = await api.get(`/attendance/stats/${selectedDate}`);
+            setStats(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const loadStudents = async () => {
+        if (!selectedClass) {
+            setMessage({ type: 'error', text: 'Pehle Class select karo' });
+            return;
+        }
+
+        setFetching(true);
+        setMessage({ type: '', text: '' });
+
+        try {
+            // Students fetch karo (class + optional section filter)
+            const url = selectedSection
+                ? `/students/class/${selectedClass}/section/${selectedSection}`
+                : `/students/class/${selectedClass}`;
+            const stuRes = await api.get(url);
+            setStudents(stuRes.data);
+
+            // Existing attendance fetch karo
+            const attUrl = selectedSection
+                ? `/attendance/date/${selectedDate}/class/${selectedClass}?section_id=${selectedSection}`
+                : `/attendance/date/${selectedDate}/class/${selectedClass}`;
+            const attRes = await api.get(attUrl);
+
+            // Map banao: student_id -> status
+            const map = {};
+            attRes.data.forEach((a) => {
+                map[a.student_id] = a.status;
+            });
+
+            // Jinke liye attendance nahi hai, unko 'present' default do
+            stuRes.data.forEach((s) => {
+                if (!map[s.id]) map[s.id] = 'present';
+            });
+
+            setAttendanceMap(map);
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: 'error', text: 'Failed to load students' });
+        } finally {
+            setFetching(false);
+        }
+    };
+
+    const toggleStatus = (studentId, status) => {
+        setAttendanceMap({ ...attendanceMap, [studentId]: status });
+    };
+
+    const handleSave = async () => {
+        if (students.length === 0) {
+            setMessage({ type: 'error', text: 'Pehle students load karo' });
+            return;
+        }
+
         setLoading(true);
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/attendance/', {
-                student_id: parseInt(form.student_id),
-                date: form.date,
-                status: form.status,
-                marked_by: parseInt(form.teacher_id),
-            });
-            setMessage({ type: 'success', text: 'Attendance marked successfully! ✅' });
-            if (form.student_id) fetchHistory(form.student_id);
+            const records = students.map((s) => ({
+                student_id: s.id,
+                date: selectedDate,
+                status: attendanceMap[s.id] || 'present',
+                class_id: parseInt(selectedClass),
+                section_id: selectedSection ? parseInt(selectedSection) : null,
+            }));
+
+            await api.post('/attendance/bulk', { records });
+            setMessage({ type: 'success', text: `${records.length} attendance records saved! ✅` });
+            fetchStats();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to mark attendance',
+                text: error.response?.data?.detail || 'Failed to save attendance',
             });
         } finally {
             setLoading(false);
         }
     };
 
-    const statusColors = {
-        present: { bg: '#c6f6d5', color: '#22543d', emoji: '✅' },
-        absent: { bg: '#fed7d7', color: '#c53030', emoji: '❌' },
-        half_day: { bg: '#feebc8', color: '#7b341e', emoji: '⏰' },
-        leave: { bg: '#bee3f8', color: '#2c5282', emoji: '🏖️' },
+    const markAll = (status) => {
+        const newMap = {};
+        students.forEach((s) => {
+            newMap[s.id] = status;
+        });
+        setAttendanceMap(newMap);
     };
+
+    const presentCount = Object.values(attendanceMap).filter((s) => s === 'present').length;
+    const absentCount = Object.values(attendanceMap).filter((s) => s === 'absent').length;
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            {/* Header */}
             <div style={{ marginBottom: '30px' }}>
                 <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Attendance</h1>
-                <p style={{ color: '#718096', margin: 0 }}>Mark and track daily attendance</p>
+                <p style={{ color: '#718096', margin: 0 }}>Mark daily attendance for students</p>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', backgroundColor: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', width: 'fit-content' }}>
-                <button
-                    onClick={() => setView('mark')}
-                    style={{
-                        padding: '10px 24px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        backgroundColor: view === 'mark' ? '#667eea' : 'transparent',
-                        color: view === 'mark' ? 'white' : '#4a5568',
-                    }}
-                >
-                    ✏️ Mark Attendance
-                </button>
-                <button
-                    onClick={() => setView('history')}
-                    style={{
-                        padding: '10px 24px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        backgroundColor: view === 'history' ? '#667eea' : 'transparent',
-                        color: view === 'history' ? 'white' : '#4a5568',
-                    }}
-                >
-                    📊 View History
-                </button>
-            </div>
-
-            {/* Message */}
             {message.text && (
                 <div style={{
                     padding: '14px 20px',
@@ -157,246 +164,263 @@ const Attendance = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
-                    fontSize: '14px',
                 }}>
                     {message.text}
                 </div>
             )}
 
-            {view === 'mark' && (
+            {/* Stats Card */}
+            {stats && (
                 <div style={{
                     backgroundColor: 'white',
                     borderRadius: '16px',
-                    padding: '32px',
+                    padding: '24px',
+                    marginBottom: '24px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gap: '16px',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c', marginBottom: '24px' }}>Mark Today's Attendance</h3>
-
-                    <form onSubmit={handleSubmit}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-                            {/* Class */}
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                                <select
-                                    value={form.class_id}
-                                    onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '', student_id: '' })}
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                    required
-                                >
-                                    <option value="">Select Class</option>
-                                    {classes.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Section */}
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Section</label>
-                                <select
-                                    value={form.section_id}
-                                    onChange={(e) => setForm({ ...form, section_id: e.target.value })}
-                                    disabled={!form.class_id}
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
-                                >
-                                    <option value="">Select Section</option>
-                                    {sections.map((s) => (
-                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Student */}
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
-                                <select
-                                    value={form.student_id}
-                                    onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                                    disabled={!form.class_id}
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
-                                    required
-                                >
-                                    <option value="">Select Student</option>
-                                    {students.map((s) => (
-                                        <option key={s.id} value={s.id}>Roll {s.roll_number} (ID: {s.id})</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Teacher */}
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Marked By (Teacher)</label>
-                                <select
-                                    value={form.teacher_id}
-                                    onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                    required
-                                >
-                                    <option value="">Select Teacher</option>
-                                    {teachers.map((t) => (
-                                        <option key={t.id} value={t.id}>{t.qualification} (ID: {t.id})</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Date */}
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Date</label>
-                                <input
-                                    type="date"
-                                    value={form.date}
-                                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    required
-                                />
-                            </div>
-
-                            {/* Status */}
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Status</label>
-                                <select
-                                    value={form.status}
-                                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                    required
-                                >
-                                    <option value="present">✅ Present</option>
-                                    <option value="absent">❌ Absent</option>
-                                    <option value="half_day">⏰ Half Day</option>
-                                    <option value="leave">🏖️ Leave</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            style={{
-                                padding: '14px 32px',
-                                fontSize: '15px',
-                                fontWeight: '600',
-                                color: 'white',
-                                background: loading ? '#a0aec0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                border: 'none',
-                                borderRadius: '10px',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                            }}
-                        >
-                            {loading ? 'Marking...' : '✓ Mark Attendance'}
-                        </button>
-                    </form>
-
-                    {/* Quick History Preview */}
-                    {form.student_id && history.length > 0 && (
-                        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
-                            <h4 style={{ color: '#1a202c', marginBottom: '16px' }}>Recent Attendance for this Student</h4>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {history.slice(0, 10).map((h) => {
-                                    const c = statusColors[h.status.toLowerCase()] || statusColors.present;
-                                    return (
-                                        <div key={h.id} style={{
-                                            padding: '8px 14px',
-                                            borderRadius: '8px',
-                                            backgroundColor: c.bg,
-                                            color: c.color,
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                        }}>
-                                            {c.emoji} {h.date}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
+                    <div>
+                        <p style={{ margin: 0, color: '#718096', fontSize: '13px' }}>📅 Date</p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#1a202c' }}>
+                            {stats.date}
+                        </p>
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, color: '#718096', fontSize: '13px' }}>👥 Total</p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#667eea' }}>
+                            {stats.total}
+                        </p>
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, color: '#718096', fontSize: '13px' }}>✅ Present</p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#48bb78' }}>
+                            {stats.present}
+                        </p>
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, color: '#718096', fontSize: '13px' }}>❌ Absent</p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#dc2626' }}>
+                            {stats.absent}
+                        </p>
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, color: '#718096', fontSize: '13px' }}>📊 Percentage</p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#764ba2' }}>
+                            {stats.percentage}%
+                        </p>
+                    </div>
                 </div>
             )}
 
-            {view === 'history' && (
+            {/* Filters */}
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '16px',
+                alignItems: 'end',
+            }}>
                 <div>
-                    {/* Filter */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                            🔍 Select Class to View Students
-                        </label>
-                        <select
-                            value={form.class_id}
-                            onChange={(e) => setForm({ ...form, class_id: e.target.value, student_id: '' })}
-                            style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
-                        >
-                            <option value="">-- Select Class --</option>
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>📅 Date</label>
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                            setSelectedDate(e.target.value);
+                            fetchStats();
+                        }}
+                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                </div>
+
+                <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>🏫 Class</label>
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => setSelectedClass(e.target.value)}
+                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                    >
+                        <option value="">Select Class</option>
+                        {classes.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>📚 Section</label>
+                    <select
+                        value={selectedSection}
+                        onChange={(e) => setSelectedSection(e.target.value)}
+                        disabled={!selectedClass}
+                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}
+                    >
+                        <option value="">All Sections</option>
+                        {sections.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <button
+                        onClick={loadStudents}
+                        disabled={!selectedClass || fetching}
+                        style={{
+                            width: '100%',
+                            padding: '12px 24px',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: 'white',
+                            background: (!selectedClass || fetching) ? '#a0aec0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: (!selectedClass || fetching) ? 'not-allowed' : 'pointer',
+                        }}
+                    >
+                        {fetching ? 'Loading...' : '🔍 Load Students'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Quick Actions */}
+            {students.length > 0 && (
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '16px 24px',
+                    marginBottom: '24px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    display: 'flex',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                }}>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>⚡ Quick Actions:</span>
+                    <button
+                        onClick={() => markAll('present')}
+                        style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                    >
+                        ✅ Mark All Present
+                    </button>
+                    <button
+                        onClick={() => markAll('absent')}
+                        style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#dc2626', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                    >
+                        ❌ Mark All Absent
+                    </button>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '16px', fontSize: '14px' }}>
+                        <span style={{ color: '#48bb78', fontWeight: '600' }}>✅ {presentCount}</span>
+                        <span style={{ color: '#dc2626', fontWeight: '600' }}>❌ {absentCount}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Students Table */}
+            {students.length > 0 && (
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden', marginBottom: '24px' }}>
+                    <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                        <h3 style={{ margin: 0, color: '#1a202c' }}>Students ({students.length})</h3>
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr style={{ backgroundColor: '#f7fafc' }}>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Name</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {students.map((s) => (
+                                <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>
+                                        {s.name || `Student #${s.id}`}
+                                    </td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.roll_no || '—'}</td>
+                                    <td style={{ padding: '16px 24px' }}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => toggleStatus(s.id, 'present')}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: attendanceMap[s.id] === 'present' ? 'white' : '#48bb78',
+                                                    background: attendanceMap[s.id] === 'present' ? '#48bb78' : 'white',
+                                                    border: '2px solid #48bb78',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                ✅ Present
+                                            </button>
+                                            <button
+                                                onClick={() => toggleStatus(s.id, 'absent')}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: attendanceMap[s.id] === 'absent' ? 'white' : '#dc2626',
+                                                    background: attendanceMap[s.id] === 'absent' ? '#dc2626' : 'white',
+                                                    border: '2px solid #dc2626',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                ❌ Absent
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             ))}
-                        </select>
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
-                        {form.class_id && (
-                            <div style={{ marginTop: '16px' }}>
-                                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                                    Select Student
-                                </label>
-                                <select
-                                    value={form.student_id}
-                                    onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                                    style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
-                                >
-                                    <option value="">-- Select Student --</option>
-                                    {students.map((s) => (
-                                        <option key={s.id} value={s.id}>Roll {s.roll_number}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                    </div>
+            {/* Save Button */}
+            {students.length > 0 && (
+                <div style={{ textAlign: 'right' }}>
+                    <button
+                        onClick={handleSave}
+                        disabled={loading}
+                        style={{
+                            padding: '16px 48px',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: 'white',
+                            background: loading ? '#a0aec0' : 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            boxShadow: '0 4px 15px rgba(72, 187, 120, 0.4)',
+                        }}
+                    >
+                        {loading ? 'Saving...' : '💾 Save Attendance'}
+                    </button>
+                </div>
+            )}
 
-                    {/* History Table */}
-                    <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                            <h3 style={{ margin: 0, color: '#1a202c' }}>Attendance History ({history.length})</h3>
-                        </div>
-
-                        {history.length === 0 ? (
-                            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📊</div>
-                                <p style={{ color: '#718096' }}>Select a student to view attendance history</p>
-                            </div>
-                        ) : (
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ backgroundColor: '#f7fafc' }}>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Date</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Status</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Marked By</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {history.map((h) => {
-                                        const c = statusColors[h.status.toLowerCase()] || statusColors.present;
-                                        return (
-                                            <tr key={h.id} style={{ borderTop: '1px solid #e2e8f0' }}>
-                                                <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{h.date}</td>
-                                                <td style={{ padding: '16px 24px' }}>
-                                                    <span style={{
-                                                        padding: '6px 14px',
-                                                        borderRadius: '20px',
-                                                        backgroundColor: c.bg,
-                                                        color: c.color,
-                                                        fontSize: '13px',
-                                                        fontWeight: '600',
-                                                    }}>
-                                                        {c.emoji} {h.status}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', color: '#718096' }}>Teacher #{h.marked_by}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        )}
-                    </div>
+            {students.length === 0 && !fetching && (
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <div style={{ fontSize: '64px', marginBottom: '16px' }}>📋</div>
+                    <p style={{ color: '#718096' }}>
+                        Date, Class aur Section select karke "Load Students" dabao
+                    </p>
                 </div>
             )}
         </div>
