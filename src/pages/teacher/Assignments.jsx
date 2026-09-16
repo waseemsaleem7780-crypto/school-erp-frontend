@@ -9,6 +9,7 @@ const TeacherAssignments = () => {
     const [assignments, setAssignments] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [editingId, setEditingId] = useState(null);
     
     const [form, setForm] = useState({
         class_id: '',
@@ -114,23 +115,67 @@ const TeacherAssignments = () => {
         }
     };
 
+    const handleEdit = (assignment) => {
+        setForm({
+            class_id: '',
+            subject_id: '',
+            student_id: assignment.student_id,
+            teacher_id: assignment.teacher_id,
+            title: assignment.title,
+            description: assignment.description,
+            deadline: assignment.deadline,
+            file: null,
+            file_url: assignment.file_path || '',
+        });
+        setEditingId(assignment.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Kya aap waqai ye assignment delete karna chahte ho?')) return;
+        
+        try {
+            await api.delete(`/assignment/${id}`);
+            setMessage({ type: 'success', text: 'Assignment deleted! ✅' });
+            if (form.student_id) fetchAssignments(form.student_id);
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Delete failed: ' + (error.response?.data?.detail || error.message) });
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/assignment/', {
-                student_id: parseInt(form.student_id),
-                subject_id: parseInt(form.subject_id),
-                teacher_id: parseInt(form.teacher_id),
-                title: form.title,
-                description: form.description,
-                deadline: form.deadline,
-                file_path: form.file_url,
-            });
-            setMessage({ type: 'success', text: 'Assignment saved! ✅' });
+            if (editingId) {
+                await api.put(`/assignment/${editingId}`, {
+                    student_id: parseInt(form.student_id),
+                    subject_id: parseInt(form.subject_id) || 1,
+                    teacher_id: parseInt(form.teacher_id),
+                    title: form.title,
+                    description: form.description,
+                    deadline: form.deadline,
+                    file_path: form.file_url,
+                });
+                setMessage({ type: 'success', text: 'Assignment updated! ✅' });
+            } else {
+                await api.post('/assignment/', {
+                    student_id: parseInt(form.student_id),
+                    subject_id: parseInt(form.subject_id),
+                    teacher_id: parseInt(form.teacher_id),
+                    title: form.title,
+                    description: form.description,
+                    deadline: form.deadline,
+                    file_path: form.file_url,
+                });
+                setMessage({ type: 'success', text: 'Assignment saved! ✅' });
+            }
+            
             setForm({ ...form, title: '', description: '', deadline: '', file: null, file_url: '' });
+            setEditingId(null);
             setShowForm(false);
             if (form.student_id) fetchAssignments(form.student_id);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
@@ -141,6 +186,15 @@ const TeacherAssignments = () => {
         }
     };
 
+    const handleCancel = () => {
+        setShowForm(false);
+        setEditingId(null);
+        setForm({
+            class_id: '', subject_id: '', student_id: '', teacher_id: '',
+            title: '', description: '', deadline: '', file: null, file_url: '',
+        });
+    };
+
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
@@ -149,7 +203,7 @@ const TeacherAssignments = () => {
                     <p style={{ color: '#718096', margin: 0 }}>Create assignments for students</p>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? handleCancel() : setShowForm(true)}
                     style={{
                         padding: '12px 24px',
                         fontSize: '15px',
@@ -186,11 +240,13 @@ const TeacherAssignments = () => {
                     marginBottom: '24px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Create New Assignment</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>
+                        {editingId ? 'Edit Assignment' : 'Create New Assignment'}
+                    </h3>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}>
                                 <option value="">Select Class</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
@@ -198,7 +254,7 @@ const TeacherAssignments = () => {
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
-                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}>
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
@@ -236,7 +292,7 @@ const TeacherAssignments = () => {
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Assignment File (Optional - PDF, JPG, PNG, DOC)</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Assignment File (Optional)</label>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <input
                                     type="file"
@@ -274,15 +330,20 @@ const TeacherAssignments = () => {
                             </div>
                             {form.file_url && (
                                 <p style={{ fontSize: '12px', color: '#22543d', marginTop: '8px', fontWeight: '600' }}>
-                                    ✅ File uploaded! Ab "Save Assignment" dabao.
+                                    ✅ File ready hai
                                 </p>
                             )}
                         </div>
 
-                        <div style={{ gridColumn: '1 / -1' }}>
+                        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
                             <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                {loading ? 'Saving...' : '💾 Save Assignment'}
+                                {loading ? 'Saving...' : (editingId ? '💾 Update Assignment' : '💾 Save Assignment')}
                             </button>
+                            {editingId && (
+                                <button type="button" onClick={handleCancel} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: '#4a5568', background: '#e2e8f0', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                                    Cancel
+                                </button>
+                            )}
                         </div>
                     </form>
                 </div>
@@ -308,6 +369,39 @@ const TeacherAssignments = () => {
                                     </span>
                                 </div>
                                 <p style={{ color: '#718096', margin: '8px 0', fontSize: '14px' }}>{a.description}</p>
+                                
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                                    <button
+                                        onClick={() => handleEdit(a)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            color: 'white',
+                                            background: '#667eea',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        ✏️ Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(a.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            color: 'white',
+                                            background: '#dc2626',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        🗑️ Delete
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
