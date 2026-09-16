@@ -10,7 +10,6 @@ const TeacherStudyMaterial = () => {
     const [selectedClass, setSelectedClass] = useState('');
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
@@ -20,9 +19,7 @@ const TeacherStudyMaterial = () => {
         description: '',
         file: null,
         file_url: '',
-        file_type: '',
     });
-    
     const [message, setMessage] = useState({ type: '', text: '' });
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -98,12 +95,10 @@ const TeacherStudyMaterial = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            // FormData banao
             const formData = new FormData();
             formData.append('file', form.file);
             formData.append('folder', 'study_material');
 
-            // Upload karo
             const uploadRes = await api.post('/upload/file', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 onUploadProgress: (progressEvent) => {
@@ -112,14 +107,10 @@ const TeacherStudyMaterial = () => {
                 },
             });
 
-            // URL mil gaya
-            const fileUrl = uploadRes.data.url;
-            const fileType = uploadRes.data.format;
-
-            setForm({ ...form, file_url: fileUrl, file_type: fileType });
+            setForm({ ...form, file_url: uploadRes.data.url });
             setMessage({ type: 'success', text: 'File uploaded! Ab Save dabao.' });
         } catch (error) {
-            setMessage({ type: 'error', text: 'File upload failed: ' + (error.response?.data?.detail || error.message) });
+            setMessage({ type: 'error', text: 'Upload failed: ' + (error.response?.data?.detail || error.message) });
         } finally {
             setUploading(false);
         }
@@ -147,7 +138,7 @@ const TeacherStudyMaterial = () => {
                 file_path: form.file_url,
             });
             setMessage({ type: 'success', text: 'Study material saved! ✅' });
-            setForm({ ...form, title: '', description: '', file: null, file_url: '', file_type: '' });
+            setForm({ ...form, title: '', description: '', file: null, file_url: '' });
             setShowForm(false);
             if (selectedClass) fetchMaterials(selectedClass);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
@@ -156,14 +147,6 @@ const TeacherStudyMaterial = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const getFileIcon = (format) => {
-        if (!format) return '📄';
-        if (format === 'pdf') return '📕';
-        if (['jpg', 'jpeg', 'png'].includes(format)) return '🖼️';
-        if (['doc', 'docx'].includes(format)) return '📘';
-        return '📄';
     };
 
     return (
@@ -198,7 +181,6 @@ const TeacherStudyMaterial = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
                 }}>
                     {message.text}
                 </div>
@@ -256,9 +238,8 @@ const TeacherStudyMaterial = () => {
                             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Arial' }} required />
                         </div>
 
-                        {/* File Upload Section */}
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>File (PDF, JPG, PNG, DOC, DOCX)</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>File (PDF, JPG, PNG, DOC)</label>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <input
                                     type="file"
@@ -294,11 +275,6 @@ const TeacherStudyMaterial = () => {
                                     </button>
                                 )}
                             </div>
-                            {form.file && !form.file_url && (
-                                <p style={{ fontSize: '12px', color: '#718096', marginTop: '8px' }}>
-                                    Selected: {form.file.name} ({(form.file.size / 1024).toFixed(1)} KB)
-                                </p>
-                            )}
                             {form.file_url && (
                                 <p style={{ fontSize: '12px', color: '#22543d', marginTop: '8px', fontWeight: '600' }}>
                                     ✅ File uploaded! Ab "Save Material" dabao.
@@ -315,7 +291,6 @@ const TeacherStudyMaterial = () => {
                 </div>
             )}
 
-            {/* Filter */}
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔍 View Materials by Class</label>
                 <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}>
@@ -324,7 +299,6 @@ const TeacherStudyMaterial = () => {
                 </select>
             </div>
 
-            {/* Materials List */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
                 {materials.length === 0 ? (
                     <div style={{ gridColumn: '1 / -1', backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
@@ -334,7 +308,7 @@ const TeacherStudyMaterial = () => {
                 ) : (
                     materials.map((m) => (
                         <div key={m.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', borderTop: '4px solid #667eea' }}>
-                            <div style={{ fontSize: '40px', marginBottom: '12px' }}>{getFileIcon(m.file_path?.split('.').pop())}</div>
+                            <div style={{ fontSize: '40px', marginBottom: '12px' }}>📄</div>
                             <h3 style={{ margin: '0 0 8px 0', color: '#1a202c' }}>{m.title}</h3>
                             <p style={{ color: '#718096', margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.5' }}>{m.description}</p>
                             {m.file_path && (
