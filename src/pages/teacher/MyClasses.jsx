@@ -36,7 +36,13 @@ const MyClasses = () => {
                     Loading...
                 </div>
             ) : classes.length === 0 ? (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
                     <p style={{ color: '#718096' }}>No classes assigned yet</p>
                 </div>
