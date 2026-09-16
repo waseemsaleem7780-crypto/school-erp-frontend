@@ -52,14 +52,29 @@ const MyStudents = () => {
                 </p>
             </div>
 
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                     🔍 Select Class
                 </label>
                 <select
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
+                    style={{
+                        width: '100%',
+                        maxWidth: '300px',
+                        padding: '12px 16px',
+                        fontSize: '15px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '10px',
+                        outline: 'none',
+                        backgroundColor: 'white',
+                    }}
                 >
                     <option value="">-- Select Class --</option>
                     {classes.map((c) => (
@@ -68,7 +83,13 @@ const MyStudents = () => {
                 </select>
             </div>
 
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                     🔎 Search by Roll Number
                 </label>
@@ -77,11 +98,24 @@ const MyStudents = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search..."
-                    style={{ width: '100%', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: '15px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '10px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                    }}
                 />
             </div>
 
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                overflow: 'hidden',
+            }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                     <h3 style={{ margin: 0, color: '#1a202c' }}>Students ({filtered.length})</h3>
                 </div>
