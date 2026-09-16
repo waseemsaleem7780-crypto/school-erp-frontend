@@ -98,7 +98,6 @@ const MarkAttendance = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
                 }}>
                     {message.text}
                 </div>
