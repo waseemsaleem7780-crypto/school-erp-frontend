@@ -3,10 +3,10 @@ import api from '../../api/axios';
 
 const TeacherDashboard = () => {
     const [stats, setStats] = useState({
-        classes: 0,
-        students: 0,
-        homework: 0,
-        attendance: 0,
+        total_classes: 0,
+        total_students: 0,
+        total_homework: 0,
+        today_attendance: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -16,17 +16,8 @@ const TeacherDashboard = () => {
 
     const fetchStats = async () => {
         try {
-            const [classesRes, homeworkRes] = await Promise.all([
-                api.get('/classes/'),
-                api.get('/homework/student/1').catch(() => ({ data: [] })),
-            ]);
-            
-            setStats({
-                classes: classesRes.data.length || 0,
-                students: 0,
-                homework: homeworkRes.data.length || 0,
-                attendance: 0,
-            });
+            const res = await api.get('/teacher/my-stats');
+            setStats(res.data);
         } catch (err) {
             console.error(err);
         } finally {
@@ -35,10 +26,10 @@ const TeacherDashboard = () => {
     };
 
     const cards = [
-        { title: 'My Classes', value: stats.classes, color: '#667eea', emoji: '🏫' },
-        { title: 'My Students', value: stats.students, color: '#764ba2', emoji: '👨‍🎓' },
-        { title: 'Homework Given', value: stats.homework, color: '#f093fb', emoji: '📝' },
-        { title: 'Attendance Marked', value: stats.attendance, color: '#4facfe', emoji: '✅' },
+        { title: 'My Classes', value: stats.total_classes, color: '#667eea', emoji: '🏫', subtitle: 'Total classes' },
+        { title: 'My Students', value: stats.total_students, color: '#764ba2', emoji: '👨‍🎓', subtitle: 'Enrolled students' },
+        { title: 'Homework Given', value: stats.total_homework, color: '#f093fb', emoji: '📝', subtitle: 'Total assignments' },
+        { title: 'Today Attendance', value: stats.today_attendance, color: '#4facfe', emoji: '✅', subtitle: 'Marked today' },
     ];
 
     if (loading) {
@@ -90,6 +81,9 @@ const TeacherDashboard = () => {
                                     margin: 0,
                                 }}>
                                     {card.value}
+                                </p>
+                                <p style={{ color: '#a0aec0', fontSize: '12px', margin: '4px 0 0 0' }}>
+                                    {card.subtitle}
                                 </p>
                             </div>
                             <div style={{ fontSize: '40px' }}>{card.emoji}</div>
