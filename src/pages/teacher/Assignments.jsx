@@ -127,6 +127,7 @@ const TeacherAssignments = () => {
                 title: form.title,
                 description: form.description,
                 deadline: form.deadline,
+                file_path: form.file_url,
             });
             setMessage({ type: 'success', text: 'Assignment saved! ✅' });
             setForm({ ...form, title: '', description: '', deadline: '', file: null, file_url: '' });
