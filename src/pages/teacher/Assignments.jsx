@@ -29,6 +29,7 @@ const TeacherAssignments = () => {
 
     useEffect(() => {
         fetchData();
+        fetchAllAssignments();
     }, []);
 
     useEffect(() => {
@@ -43,6 +44,15 @@ const TeacherAssignments = () => {
             const [c, t] = await Promise.all([api.get('/classes/'), api.get('/teachers/')]);
             setClasses(c.data);
             setTeachers(t.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchAllAssignments = async () => {
+        try {
+            const res = await api.get('/assignment/');
+            setAssignments(res.data);
         } catch (err) {
             console.error(err);
         }
@@ -67,10 +77,13 @@ const TeacherAssignments = () => {
     };
 
     const fetchAssignments = async (studentId) => {
-        if (!studentId) return;
         try {
-            const res = await api.get(`/assignment/student/${studentId}`);
-            setAssignments(res.data);
+            if (studentId) {
+                const res = await api.get(`/assignment/student/${studentId}`);
+                setAssignments(res.data);
+            } else {
+                fetchAllAssignments();
+            }
         } catch (err) {
             setAssignments([]);
         }
@@ -137,7 +150,7 @@ const TeacherAssignments = () => {
         try {
             await api.delete(`/assignment/${id}`);
             setMessage({ type: 'success', text: 'Assignment deleted! ✅' });
-            if (form.student_id) fetchAssignments(form.student_id);
+            fetchAllAssignments();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: 'Delete failed: ' + (error.response?.data?.detail || error.message) });
@@ -177,7 +190,7 @@ const TeacherAssignments = () => {
             setForm({ ...form, title: '', description: '', deadline: '', file: null, file_url: '' });
             setEditingId(null);
             setShowForm(false);
-            if (form.student_id) fetchAssignments(form.student_id);
+            fetchAllAssignments();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to save' });
