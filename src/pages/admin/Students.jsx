@@ -69,11 +69,18 @@ const Students = () => {
         }
     };
 
-    const filteredStudents = students.filter((s) =>
-        s.roll_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.id.toString().includes(searchTerm) ||
-        s.user_id.toString().includes(searchTerm)
-    );
+    const getClassName = (classId) => {
+        const cls = classes.find((c) => c.id === classId);
+        return cls ? cls.name : `Class #${classId}`;
+    };
+
+    const filteredStudents = students.filter((s) => {
+        const roll = (s.roll_number || '').toString().toLowerCase();
+        const id = (s.id || '').toString();
+        const userId = (s.user_id || '').toString();
+        const term = searchTerm.toLowerCase();
+        return roll.includes(term) || id.includes(term) || userId.includes(term);
+    });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -338,7 +345,7 @@ const Students = () => {
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>User ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Section ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
@@ -347,10 +354,10 @@ const Students = () => {
                             {filteredStudents.map((s) => (
                                 <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.roll_number}</td>
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600', fontFamily: 'monospace' }}>{s.roll_number || '—'}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{s.user_id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.class_id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id || '—'}</td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button
