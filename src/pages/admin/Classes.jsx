@@ -4,6 +4,7 @@ import api from '../../api/axios';
 const Classes = () => {
     const [classes, setClasses] = useState([]);
     const [name, setName] = useState('');
+    const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -36,25 +37,55 @@ const Classes = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/classes/', { name });
+            if (editingId) {
+                await api.put(`/classes/${editingId}`, { name });
+                setMessage({ type: 'success', text: 'Class updated! ✅' });
+            } else {
+                await api.post('/classes/', { name });
+                setMessage({ type: 'success', text: 'Class added! ✅' });
+            }
             setName('');
-            setMessage({ type: 'success', text: 'Class added successfully! ✅' });
+            setEditingId(null);
             setShowForm(false);
             fetchClasses();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to add class',
+                text: error.response?.data?.detail || 'Failed to save class',
             });
         } finally {
             setLoading(false);
         }
     };
 
+    const handleEdit = (cls) => {
+        setName(cls.name);
+        setEditingId(cls.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Kya aap waqai ye class delete karna chahte ho?')) return;
+
+        try {
+            await api.delete(`/classes/${id}`);
+            setMessage({ type: 'success', text: 'Class deleted! ✅' });
+            fetchClasses();
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Delete failed: ' + (error.response?.data?.detail || error.message) });
+        }
+    };
+
+    const handleCancel = () => {
+        setName('');
+        setEditingId(null);
+        setShowForm(false);
+    };
+
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            {/* Header */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -72,7 +103,7 @@ const Classes = () => {
                     </p>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? handleCancel() : setShowForm(true)}
                     style={{
                         padding: '12px 24px',
                         fontSize: '15px',
@@ -83,16 +114,12 @@ const Classes = () => {
                         borderRadius: '10px',
                         cursor: 'pointer',
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                        transition: 'transform 0.2s',
                     }}
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
                 >
                     {showForm ? '✕ Cancel' : '+ Add Class'}
                 </button>
             </div>
 
-            {/* Message */}
             {message.text && (
                 <div style={{
                     padding: '14px 20px',
@@ -100,14 +127,11 @@ const Classes = () => {
                     marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
-                    fontSize: '14px',
                 }}>
                     {message.text}
                 </div>
             )}
 
-            {/* Add Form */}
             {showForm && (
                 <div style={{
                     backgroundColor: 'white',
@@ -115,9 +139,10 @@ const Classes = () => {
                     padding: '24px',
                     marginBottom: '24px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    border: '2px solid #e2e8f0',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Class</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>
+                        {editingId ? 'Edit Class' : 'Add New Class'}
+                    </h3>
                     <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <input
                             type="text"
@@ -134,8 +159,6 @@ const Classes = () => {
                                 outline: 'none',
                                 boxSizing: 'border-box',
                             }}
-                            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                             required
                         />
                         <button
@@ -152,13 +175,12 @@ const Classes = () => {
                                 cursor: loading ? 'not-allowed' : 'pointer',
                             }}
                         >
-                            {loading ? 'Saving...' : 'Save Class'}
+                            {loading ? 'Saving...' : (editingId ? '💾 Update Class' : 'Save Class')}
                         </button>
                     </form>
                 </div>
             )}
 
-            {/* Stats */}
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '16px',
@@ -169,9 +191,7 @@ const Classes = () => {
                 alignItems: 'center',
                 gap: '16px',
             }}>
-                <div style={{
-                    fontSize: '36px',
-                }}>🏫</div>
+                <div style={{ fontSize: '36px' }}>🏫</div>
                 <div>
                     <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total Classes</p>
                     <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
@@ -180,8 +200,13 @@ const Classes = () => {
                 </div>
             </div>
 
-            {/* Search Box */}
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                     🔎 Search Classes
                 </label>
@@ -199,12 +224,9 @@ const Classes = () => {
                         outline: 'none',
                         boxSizing: 'border-box',
                     }}
-                    onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                 />
             </div>
 
-            {/* Classes List */}
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '16px',
@@ -232,6 +254,7 @@ const Classes = () => {
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>Class Name</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -240,6 +263,40 @@ const Classes = () => {
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{c.id}</td>
                                     <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>
                                         {c.name}
+                                    </td>
+                                    <td style={{ padding: '16px 24px' }}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={() => handleEdit(c)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#667eea',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                ✏️ Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(c.id)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#dc2626',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                🗑️ Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
