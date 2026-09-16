@@ -35,13 +35,25 @@ const StudentNoticeBoard = () => {
                 {loading ? (
                     <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
                 ) : notices.length === 0 ? (
-                    <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '60px 20px',
+                        textAlign: 'center',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📢</div>
                         <p style={{ color: '#718096' }}>No notices yet</p>
                     </div>
                 ) : (
                     notices.map((n) => (
-                        <div key={n.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', borderLeft: '5px solid #667eea' }}>
+                        <div key={n.id} style={{
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                            borderLeft: '5px solid #667eea',
+                        }}>
                             <h3 style={{ margin: '0 0 12px 0', color: '#1a202c' }}>{n.title}</h3>
                             <p style={{ color: '#4a5568', margin: '0 0 12px 0', lineHeight: '1.6' }}>{n.context}</p>
                             <p style={{ color: '#a0aec0', margin: 0, fontSize: '12px' }}>

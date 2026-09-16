@@ -43,22 +43,38 @@ const StudentStudyMaterial = () => {
             {loading ? (
                 <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
             ) : materials.length === 0 ? (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
                     <p style={{ color: '#718096' }}>No study material yet</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                    gap: '16px',
+                }}>
                     {materials.map((m) => (
-                        <div key={m.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', borderTop: '4px solid #667eea' }}>
+                        <div key={m.id} style={{
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                            borderTop: '4px solid #667eea',
+                        }}>
                             <div style={{ fontSize: '40px', marginBottom: '12px' }}>{getFileIcon(m.file_path)}</div>
                             <h3 style={{ margin: '0 0 8px 0', color: '#1a202c' }}>{m.title}</h3>
                             <p style={{ color: '#718096', margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.5' }}>{m.description}</p>
                             {m.file_path && (
-                                <a 
-                                    href={m.file_path} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
+                                <a
+                                    href={m.file_path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     style={{
                                         display: 'inline-block',
                                         padding: '10px 20px',

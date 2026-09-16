@@ -11,7 +11,6 @@ const MyHomework = () => {
 
     const fetchHomework = async () => {
         try {
-            // Demo: student_id = 1
             const res = await api.get('/homework/student/1');
             setHomework(res.data);
         } catch (err) {
@@ -37,20 +36,29 @@ const MyHomework = () => {
             {loading ? (
                 <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
             ) : homework.length === 0 ? (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>📝</div>
                     <p style={{ color: '#718096' }}>No homework assigned yet</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '16px' }}>
                     {homework.map((h) => (
-                        <div key={h.id} style={{
-                            backgroundColor: 'white',
-                            borderRadius: '16px',
-                            padding: '24px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                            borderLeft: `5px solid ${isOverdue(h.deadline) ? '#fc8181' : '#48bb78'}`,
-                        }}>
+                        <div
+                            key={h.id}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                                borderLeft: `5px solid ${isOverdue(h.deadline) ? '#fc8181' : '#48bb78'}`,
+                            }}
+                        >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                                 <h3 style={{ margin: 0, color: '#1a202c' }}>{h.title}</h3>
                                 <span style={{

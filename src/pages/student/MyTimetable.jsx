@@ -13,7 +13,6 @@ const MyTimetable = () => {
 
     const fetchTimetable = async () => {
         try {
-            // Demo: class_id = 1
             const res = await api.get('/timetable/class/1');
             setTimetable(res.data);
         } catch (err) {
@@ -37,7 +36,13 @@ const MyTimetable = () => {
             {loading ? (
                 <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
             ) : timetable.length === 0 ? (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>🕐</div>
                     <p style={{ color: '#718096' }}>No timetable yet</p>
                 </div>
@@ -47,7 +52,12 @@ const MyTimetable = () => {
                         const dayEntries = timetable.filter((t) => t.day_of_week === day);
                         if (dayEntries.length === 0) return null;
                         return (
-                            <div key={day} style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                            <div key={day} style={{
+                                backgroundColor: 'white',
+                                borderRadius: '16px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                                overflow: 'hidden',
+                            }}>
                                 <div style={{ padding: '16px 24px', backgroundColor: '#667eea', color: 'white' }}>
                                     <h3 style={{ margin: 0, fontSize: '18px' }}>📅 {day}</h3>
                                 </div>
