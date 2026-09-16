@@ -70,26 +70,22 @@ const Attendance = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            // Students fetch karo (class + optional section filter)
             const url = selectedSection
                 ? `/students/class/${selectedClass}/section/${selectedSection}`
                 : `/students/class/${selectedClass}`;
             const stuRes = await api.get(url);
             setStudents(stuRes.data);
 
-            // Existing attendance fetch karo
             const attUrl = selectedSection
                 ? `/attendance/date/${selectedDate}/class/${selectedClass}?section_id=${selectedSection}`
                 : `/attendance/date/${selectedDate}/class/${selectedClass}`;
             const attRes = await api.get(attUrl);
 
-            // Map banao: student_id -> status
             const map = {};
             attRes.data.forEach((a) => {
                 map[a.student_id] = a.status;
             });
 
-            // Jinke liye attendance nahi hai, unko 'present' default do
             stuRes.data.forEach((s) => {
                 if (!map[s.id]) map[s.id] = 'present';
             });
@@ -121,8 +117,6 @@ const Attendance = () => {
                 student_id: s.id,
                 date: selectedDate,
                 status: attendanceMap[s.id] || 'present',
-                class_id: parseInt(selectedClass),
-                section_id: selectedSection ? parseInt(selectedSection) : null,
             }));
 
             await api.post('/attendance/bulk', { records });
@@ -145,6 +139,14 @@ const Attendance = () => {
             newMap[s.id] = status;
         });
         setAttendanceMap(newMap);
+    };
+
+    const getStudentName = (s) => {
+        return s.student_name || s.name || `Student #${s.id}`;
+    };
+
+    const getRollNumber = (s) => {
+        return s.roll_number || s.roll_no || '—';
     };
 
     const presentCount = Object.values(attendanceMap).filter((s) => s === 'present').length;
@@ -331,20 +333,20 @@ const Attendance = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Name</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Name</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {students.map((s) => (
                                 <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>
-                                        {s.name || `Student #${s.id}`}
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600', fontFamily: 'monospace' }}>
+                                        {getRollNumber(s)}
                                     </td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.roll_no || '—'}</td>
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>
+                                        {getStudentName(s)}
+                                    </td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button
