@@ -101,6 +101,35 @@ const Dashboard = () => {
         gap: '8px',
     });
 
+    // Status badge helper
+    const getStatusStyle = (status) => {
+        const s = (status || '').toLowerCase();
+        if (s === 'present') {
+            return {
+                background: 'linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%)',
+                color: '#22543d',
+                icon: '✅',
+            };
+        } else if (s === 'half_day' || s === 'half-day') {
+            return {
+                background: 'linear-gradient(135deg, #fefcbf 0%, #faf089 100%)',
+                color: '#744210',
+                icon: '⚡',
+            };
+        } else if (s === 'absent') {
+            return {
+                background: 'linear-gradient(135deg, #fed7d7 0%, #fc8181 100%)',
+                color: '#742a2a',
+                icon: '❌',
+            };
+        }
+        return {
+            background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%)',
+            color: '#4a5568',
+            icon: '•',
+        };
+    };
+
     return (
         <div style={{
             padding: '40px',
@@ -344,7 +373,7 @@ const Dashboard = () => {
                             border: '2px solid #fc8181',
                         }}>
                             <p style={{ margin: 0, color: '#742a2a', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>
-                                ❌ Absent
+                                ❌ Not Present
                             </p>
                             <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: '800', color: '#742a2a' }}>
                                 {stats.attendance_total - stats.attendance_present}
@@ -399,7 +428,7 @@ const Dashboard = () => {
                             </thead>
                             <tbody>
                                 {attendance.map((a) => {
-                                    const isPresent = a.status.toLowerCase() === 'present';
+                                    const style = getStatusStyle(a.status);
                                     return (
                                         <tr key={a.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                             <td style={{ padding: '16px 28px', color: '#1a202c', fontWeight: '500' }}>
@@ -413,12 +442,10 @@ const Dashboard = () => {
                                                     fontWeight: '700',
                                                     textTransform: 'uppercase',
                                                     letterSpacing: '0.5px',
-                                                    background: isPresent
-                                                        ? 'linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%)'
-                                                        : 'linear-gradient(135deg, #fed7d7 0%, #fc8181 100%)',
-                                                    color: isPresent ? '#22543d' : '#742a2a',
+                                                    background: style.background,
+                                                    color: style.color,
                                                 }}>
-                                                    {isPresent ? '✅' : '❌'} {a.status}
+                                                    {style.icon} {(a.status || '').replace('_', ' ')}
                                                 </span>
                                             </td>
                                         </tr>
@@ -480,7 +507,7 @@ const Dashboard = () => {
                                                 background: 'linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%)',
                                                 color: '#2a4365',
                                             }}>
-                                                {r.grade}
+                                                {r.grade || 'N/A'}
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px 28px', color: '#718096' }}>{r.remarks || '—'}</td>
@@ -519,8 +546,8 @@ const Dashboard = () => {
                             <thead>
                                 <tr style={{ background: '#f7fafc' }}>
                                     <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Amount</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Mode</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Date</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Monthly Fee</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Yearly Fee</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -529,8 +556,12 @@ const Dashboard = () => {
                                         <td style={{ padding: '16px 28px', color: '#1a202c', fontWeight: '700', fontSize: '16px' }}>
                                             💵 Rs. {f.amount}
                                         </td>
-                                        <td style={{ padding: '16px 28px', color: '#718096' }}>{f.payment_mod}</td>
-                                        <td style={{ padding: '16px 28px', color: '#718096' }}>📅 {f.payment_date}</td>
+                                        <td style={{ padding: '16px 28px', color: '#718096' }}>
+                                            Rs. {f.monthly_fee || 0}
+                                        </td>
+                                        <td style={{ padding: '16px 28px', color: '#718096' }}>
+                                            Rs. {f.yearly_fee || 0}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
