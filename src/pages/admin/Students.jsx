@@ -94,6 +94,28 @@ const Students = () => {
         setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     };
 
+    const handleDownloadPDF = async (studentId) => {
+        setMessage({ type: '', text: 'Generating PDF...' });
+        try {
+            const response = await api.get(`/pdf/student/${studentId}/report-card`, {
+                responseType: 'blob',
+            });
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `report_card_${studentId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            setMessage({ type: 'success', text: 'PDF downloaded! ✅' });
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to download PDF' });
+        }
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -389,7 +411,7 @@ const Students = () => {
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id || '—'}</td>
                                     <td style={{ padding: '16px 24px' }}>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             <button
                                                 onClick={() => handleEdit(s)}
                                                 style={{
@@ -404,6 +426,21 @@ const Students = () => {
                                                 }}
                                             >
                                                 ✏️ Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDownloadPDF(s.id)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '600',
+                                                    color: 'white',
+                                                    background: '#48bb78',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                📄 Report Card
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(s.id)}
