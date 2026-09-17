@@ -5,6 +5,8 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [backupLoading, setBackupLoading] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         fetchStats();
@@ -19,6 +21,35 @@ const AdminDashboard = () => {
             setError(err.response?.data?.detail || 'Failed to load dashboard');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleBackup = async () => {
+        setBackupLoading(true);
+        setMessage({ type: '', text: 'Downloading backup...' });
+
+        try {
+            const response = await api.get('/backup/database', {
+                responseType: 'blob',
+            });
+
+            const blob = new Blob([response.data], { type: 'application/sql' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `backup_${new Date().toISOString().split('T')[0]}.sql`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            setMessage({ type: 'success', text: 'Backup downloaded! ✅' });
+        } catch (error) {
+            console.error('Backup failed:', error);
+            setMessage({ type: 'error', text: 'Backup failed. Check console.' });
+        } finally {
+            setBackupLoading(false);
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         }
     };
 
@@ -78,6 +109,7 @@ const AdminDashboard = () => {
             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
             minHeight: '100vh',
         }}>
+            {/* Header */}
             <div style={{ marginBottom: '35px' }}>
                 <h1 style={{
                     fontSize: '36px',
@@ -95,6 +127,21 @@ const AdminDashboard = () => {
                 </p>
             </div>
 
+            {/* Message */}
+            {message.text && (
+                <div style={{
+                    padding: '14px 20px',
+                    borderRadius: '10px',
+                    marginBottom: '20px',
+                    backgroundColor: message.type === 'success' ? '#c6f6d5' : message.type === 'error' ? '#fed7d7' : '#bee3f8',
+                    color: message.type === 'success' ? '#22543d' : message.type === 'error' ? '#c53030' : '#2c5282',
+                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : message.type === 'error' ? '#fc8181' : '#90cdf4'}`,
+                }}>
+                    {message.text}
+                </div>
+            )}
+
+            {/* Stats Cards */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -129,6 +176,7 @@ const AdminDashboard = () => {
                 ))}
             </div>
 
+            {/* Today's Attendance */}
             <div style={{
                 background: 'white',
                 borderRadius: '24px',
@@ -257,6 +305,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
+            {/* Quick Actions */}
             <div style={{
                 background: 'white',
                 borderRadius: '24px',
@@ -319,6 +368,25 @@ const AdminDashboard = () => {
                             <p style={{ margin: 0, fontWeight: '700', color: '#44337a', fontSize: '15px' }}>Manage Subjects</p>
                         </div>
                     </a>
+                    <button
+                        onClick={handleBackup}
+                        disabled={backupLoading}
+                        style={{
+                            padding: '24px',
+                            background: 'linear-gradient(135deg, #fef5e7 0%, #fde68a 100%)',
+                            borderRadius: '16px',
+                            cursor: backupLoading ? 'wait' : 'pointer',
+                            border: '2px solid #f6ad55',
+                            textAlign: 'left',
+                            fontFamily: 'inherit',
+                            opacity: backupLoading ? 0.6 : 1,
+                        }}
+                    >
+                        <div style={{ fontSize: '40px', marginBottom: '12px' }}>💾</div>
+                        <p style={{ margin: 0, fontWeight: '700', color: '#7b341e', fontSize: '15px' }}>
+                            {backupLoading ? 'Downloading...' : 'Download Backup'}
+                        </p>
+                    </button>
                 </div>
             </div>
         </div>
