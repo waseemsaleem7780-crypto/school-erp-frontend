@@ -106,6 +106,27 @@ const SuperAdminSchools = () => {
         }
     };
 
+    // ✅ FIXED: Pakistan timezone ke saath date format karo
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'Never';
+        try {
+            // Backend UTC time bhejta hai — 'Z' add karo
+            const date = new Date(dateString + 'Z');
+            return date.toLocaleString('en-PK', {
+                timeZone: 'Asia/Karachi',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+
     if (loading) {
         return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>;
     }
@@ -338,7 +359,7 @@ const SuperAdminSchools = () => {
                                                 {admin.school_name || `School #${admin.school_id || '—'}`}
                                             </td>
                                             <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                                {admin.last_login ? new Date(admin.last_login).toLocaleString() : 'Never'}
+                                                {formatDateTime(admin.last_login)}
                                             </td>
                                             <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>
                                                 {admin.login_count}
