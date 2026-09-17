@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { downloadExcel } from '../../utils/exportUtils';
 
 const Fees = () => {
-    const [view, setView] = useState('structure'); // 'structure' or 'payment'
+    const [view, setView] = useState('structure');
     const [classes, setClasses] = useState([]);
     const [students, setStudents] = useState([]);
 
-    // Fee Structure
     const [structures, setStructures] = useState([]);
     const [structureForm, setStructureForm] = useState({
         class_id: '',
@@ -16,7 +16,6 @@ const Fees = () => {
         due_date: '',
     });
 
-    // Fee Payment
     const [payments, setPayments] = useState([]);
     const [paymentForm, setPaymentForm] = useState({
         student_id: '',
@@ -75,6 +74,17 @@ const Fees = () => {
         if (view === 'payment' && selectedStudent) fetchPayments(selectedStudent);
     }, [view, selectedStudent]);
 
+    const handleExport = async () => {
+        setMessage({ type: '', text: 'Downloading...' });
+        const result = await downloadExcel('/export/fees/excel', 'fees.xlsx');
+        if (result.success) {
+            setMessage({ type: 'success', text: 'Excel downloaded! ✅' });
+        } else {
+            setMessage({ type: 'error', text: result.error });
+        }
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
     const handleStructureSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -128,9 +138,27 @@ const Fees = () => {
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             {/* Header */}
-            <div style={{ marginBottom: '30px' }}>
-                <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Fees</h1>
-                <p style={{ color: '#718096', margin: 0 }}>Manage fee structures and payments</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Fees</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage fee structures and payments</p>
+                </div>
+                <button
+                    onClick={handleExport}
+                    style={{
+                        padding: '12px 24px',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        color: 'white',
+                        background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(72, 187, 120, 0.4)',
+                    }}
+                >
+                    📥 Export Excel
+                </button>
             </div>
 
             {/* Tabs */}
@@ -173,9 +201,9 @@ const Fees = () => {
                     padding: '14px 20px',
                     borderRadius: '10px',
                     marginBottom: '20px',
-                    backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
-                    color: message.type === 'success' ? '#22543d' : '#c53030',
-                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
+                    backgroundColor: message.type === 'success' ? '#c6f6d5' : message.type === 'error' ? '#fed7d7' : '#bee3f8',
+                    color: message.type === 'success' ? '#22543d' : message.type === 'error' ? '#c53030' : '#2c5282',
+                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : message.type === 'error' ? '#fc8181' : '#90cdf4'}`,
                     fontSize: '14px',
                 }}>
                     {message.text}
@@ -280,7 +308,6 @@ const Fees = () => {
                         </form>
                     </div>
 
-                    {/* Filter */}
                     <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                             🔍 View Structure by Class
@@ -297,7 +324,6 @@ const Fees = () => {
                         </select>
                     </div>
 
-                    {/* Structures List */}
                     <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                             <h3 style={{ margin: 0, color: '#1a202c' }}>Fee Structures ({structures.length})</h3>
@@ -450,7 +476,6 @@ const Fees = () => {
                         </form>
                     </div>
 
-                    {/* Payment History */}
                     <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                             <h3 style={{ margin: 0, color: '#1a202c' }}>Payment History ({payments.length})</h3>
