@@ -25,6 +25,7 @@ import Timetable from './pages/admin/Timetable';
 import Concession from './pages/admin/Concession';
 import AcademicYears from './pages/admin/AcademicYears';
 import SchoolSettings from './pages/admin/SchoolSettings';
+import Analytics from './pages/admin/Analytics';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -79,6 +80,7 @@ function App() {
                             <Route path="/admin/timetable" element={<Timetable />} />
                             <Route path="/admin/academic-years" element={<AcademicYears />} />
                             <Route path="/admin/settings" element={<SchoolSettings />} />
+                            <Route path="/admin/analytics" element={<Analytics />} />
                         </Route>
                     </Route>
 

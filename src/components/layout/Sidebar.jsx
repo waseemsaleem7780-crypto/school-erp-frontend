@@ -32,6 +32,7 @@ const Sidebar = () => {
         { name: 'Timetable', path: '/admin/timetable' },
         { name: 'Academic Years', path: '/admin/academic-years' },
         { name: 'School Settings', path: '/admin/settings' },
+        { name: 'Analytics', path: '/admin/analytics', icon: '📊' }
     ];
 
     const teacherMenu = [
