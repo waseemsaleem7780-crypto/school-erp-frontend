@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { downloadExcel } from '../../utils/exportUtils';
 
 const Attendance = () => {
     const [classes, setClasses] = useState([]);
@@ -99,6 +100,20 @@ const Attendance = () => {
         }
     };
 
+    const handleExport = async () => {
+        setMessage({ type: '', text: 'Downloading...' });
+        const endpoint = selectedClass
+            ? `/export/attendance/excel?class_id=${selectedClass}`
+            : '/export/attendance/excel';
+        const result = await downloadExcel(endpoint, 'attendance.xlsx');
+        if (result.success) {
+            setMessage({ type: 'success', text: 'Excel downloaded! ✅' });
+        } else {
+            setMessage({ type: 'error', text: result.error });
+        }
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
     const toggleStatus = (studentId, status) => {
         setAttendanceMap({ ...attendanceMap, [studentId]: status });
     };
@@ -154,9 +169,28 @@ const Attendance = () => {
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            <div style={{ marginBottom: '30px' }}>
-                <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Attendance</h1>
-                <p style={{ color: '#718096', margin: 0 }}>Mark daily attendance for students</p>
+            {/* Header with Export Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Attendance</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Mark daily attendance for students</p>
+                </div>
+                <button
+                    onClick={handleExport}
+                    style={{
+                        padding: '12px 24px',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        color: 'white',
+                        background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(72, 187, 120, 0.4)',
+                    }}
+                >
+                    📥 Export Excel
+                </button>
             </div>
 
             {message.text && (
@@ -164,8 +198,8 @@ const Attendance = () => {
                     padding: '14px 20px',
                     borderRadius: '10px',
                     marginBottom: '20px',
-                    backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
-                    color: message.type === 'success' ? '#22543d' : '#c53030',
+                    backgroundColor: message.type === 'success' ? '#c6f6d5' : message.type === 'error' ? '#fed7d7' : '#bee3f8',
+                    color: message.type === 'success' ? '#22543d' : message.type === 'error' ? '#c53030' : '#2c5282',
                 }}>
                     {message.text}
                 </div>
