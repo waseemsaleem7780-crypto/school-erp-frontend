@@ -12,12 +12,10 @@ const Sidebar = () => {
         role = 'admin';
     }
 
-    // Super Admin Menu
     const superAdminMenu = [
         { name: 'Schools Management', path: '/superadmin/schools', icon: '🏫' },
     ];
 
-    // Admin Menu
     const adminMenu = [
         { name: 'Dashboard', path: '/admin/dashboard' },
         { name: 'Students', path: '/admin/students' },
@@ -38,10 +36,9 @@ const Sidebar = () => {
         { name: 'Timetable', path: '/admin/timetable' },
         { name: 'Academic Years', path: '/admin/academic-years' },
         { name: 'School Settings', path: '/admin/settings' },
-        { name: 'Analytics', path: '/admin/analytics', icon: '📊' }
+        { name: 'Analytics', path: '/admin/analytics' }
     ];
 
-    // Teacher Menu
     const teacherMenu = [
         { name: 'Dashboard', path: '/teacher/dashboard' },
         { name: 'My Classes', path: '/teacher/my-classes' },
@@ -55,7 +52,6 @@ const Sidebar = () => {
         { name: 'Notice Board', path: '/teacher/notice-board' },
     ];
 
-    // Student Menu
     const studentMenu = [
         { name: 'Dashboard', path: '/student/dashboard' },
         { name: 'My Attendance', path: '/student/my-attendance' },
@@ -68,7 +64,6 @@ const Sidebar = () => {
         { name: 'Notice Board', path: '/student/notice-board' },
     ];
 
-    // Role-based menu
     let menuItems = [];
     let roleLabel = 'Admin';
 
@@ -106,7 +101,6 @@ const Sidebar = () => {
             left: 0,
             top: 0,
         }}>
-            {/* Header - Fixed */}
             <div style={{ padding: '20px', borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <h2 style={{ margin: 0, fontSize: '20px' }}>School ERP</h2>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
@@ -114,7 +108,6 @@ const Sidebar = () => {
                 </p>
             </div>
 
-            {/* Menu - Scrollable */}
             <nav style={{
                 flex: 1,
                 padding: '12px',
@@ -141,7 +134,6 @@ const Sidebar = () => {
                 ))}
             </nav>
 
-            {/* Logout - Fixed Bottom */}
             <div style={{ padding: '12px', borderTop: '1px solid #334155', flexShrink: 0 }}>
                 <button
                     onClick={handleLogout}
