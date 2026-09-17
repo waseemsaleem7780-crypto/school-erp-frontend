@@ -9,7 +9,7 @@ const SuperAdminSchools = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [activeTab, setActiveTab] = useState('schools'); // 'schools' or 'admins'
+    const [activeTab, setActiveTab] = useState('schools');
 
     const [form, setForm] = useState({
         name: '',
@@ -121,7 +121,6 @@ const SuperAdminSchools = () => {
                 </p>
             </div>
 
-            {/* Stats Cards */}
             {stats && (
                 <div style={{
                     display: 'grid',
@@ -129,46 +128,24 @@ const SuperAdminSchools = () => {
                     gap: '20px',
                     marginBottom: '30px',
                 }}>
-                    <div style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        borderRadius: '16px',
-                        padding: '24px',
-                        color: 'white',
-                    }}>
+                    <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '16px', padding: '24px', color: 'white' }}>
                         <div style={{ fontSize: '36px', marginBottom: '8px' }}>🏫</div>
                         <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Total Schools</p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>
-                            {stats.total_schools}
-                        </p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>{stats.total_schools}</p>
                     </div>
-                    <div style={{
-                        background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
-                        borderRadius: '16px',
-                        padding: '24px',
-                        color: 'white',
-                    }}>
+                    <div style={{ background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)', borderRadius: '16px', padding: '24px', color: 'white' }}>
                         <div style={{ fontSize: '36px', marginBottom: '8px' }}>👨‍💼</div>
                         <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Total Admins</p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>
-                            {stats.total_admins}
-                        </p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>{stats.total_admins}</p>
                     </div>
-                    <div style={{
-                        background: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)',
-                        borderRadius: '16px',
-                        padding: '24px',
-                        color: 'white',
-                    }}>
+                    <div style={{ background: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)', borderRadius: '16px', padding: '24px', color: 'white' }}>
                         <div style={{ fontSize: '36px', marginBottom: '8px' }}>👨‍🎓</div>
                         <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Total Students</p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>
-                            {stats.total_students}
-                        </p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>{stats.total_students}</p>
                     </div>
                 </div>
             )}
 
-            {/* Tabs */}
             <div style={{
                 display: 'flex',
                 gap: '8px',
@@ -211,7 +188,6 @@ const SuperAdminSchools = () => {
                 </button>
             </div>
 
-            {/* Message */}
             {message.text && (
                 <div style={{
                     padding: '14px 20px',
@@ -224,7 +200,6 @@ const SuperAdminSchools = () => {
                 </div>
             )}
 
-            {/* ============ SCHOOLS TAB ============ */}
             {activeTab === 'schools' && (
                 <>
                     <div style={{ marginBottom: '20px' }}>
@@ -246,82 +221,33 @@ const SuperAdminSchools = () => {
                     </div>
 
                     {showForm && (
-                        <div style={{
-                            backgroundColor: 'white',
-                            borderRadius: '16px',
-                            padding: '24px',
-                            marginBottom: '24px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                        }}>
+                        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                             <h3 style={{ marginTop: 0, color: '#1a202c' }}>
                                 {editingId ? 'Edit School' : 'Add New School'}
                             </h3>
                             <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>School Name</label>
-                                    <input
-                                        type="text"
-                                        value={form.name}
-                                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                        placeholder="e.g., DPS Lahore"
-                                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                        required
-                                    />
+                                    <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., DPS Lahore" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subdomain</label>
-                                    <input
-                                        type="text"
-                                        value={form.subdomain}
-                                        onChange={(e) => setForm({ ...form, subdomain: e.target.value })}
-                                        placeholder="e.g., dps-lahore"
-                                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    />
+                                    <input type="text" value={form.subdomain} onChange={(e) => setForm({ ...form, subdomain: e.target.value })} placeholder="e.g., dps-lahore" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Email</label>
-                                    <input
-                                        type="email"
-                                        value={form.admin_email}
-                                        onChange={(e) => setForm({ ...form, admin_email: e.target.value })}
-                                        placeholder="admin@dps.com"
-                                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    />
+                                    <input type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@dps.com" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone</label>
-                                    <input
-                                        type="text"
-                                        value={form.phone}
-                                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                        placeholder="+92-XXX-XXXXXXX"
-                                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    />
+                                    <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+92-XXX-XXXXXXX" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
                                 </div>
                                 <div style={{ gridColumn: '1 / -1' }}>
                                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Address</label>
-                                    <input
-                                        type="text"
-                                        value={form.address}
-                                        onChange={(e) => setForm({ ...form, address: e.target.value })}
-                                        placeholder="Full address"
-                                        style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    />
+                                    <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Full address" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
                                 </div>
                                 <div style={{ gridColumn: '1 / -1' }}>
-                                    <button
-                                        type="submit"
-                                        style={{
-                                            padding: '14px 32px',
-                                            fontSize: '15px',
-                                            fontWeight: '600',
-                                            color: 'white',
-                                            background: '#48bb78',
-                                            border: 'none',
-                                            borderRadius: '10px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
+                                    <button type="submit" style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
                                         {editingId ? '💾 Update School' : '💾 Save School'}
                                     </button>
                                 </div>
@@ -356,31 +282,14 @@ const SuperAdminSchools = () => {
                                             <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>{s.name}</td>
                                             <td style={{ padding: '16px 24px', color: '#718096' }}>{s.subdomain || '—'}</td>
                                             <td style={{ padding: '16px 24px' }}>
-                                                <span style={{
-                                                    padding: '4px 12px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    background: s.subscription_plan === 'trial' ? '#fefcbf' : '#c6f6d5',
-                                                    color: s.subscription_plan === 'trial' ? '#744210' : '#22543d',
-                                                }}>
+                                                <span style={{ padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: s.subscription_plan === 'trial' ? '#fefcbf' : '#c6f6d5', color: s.subscription_plan === 'trial' ? '#744210' : '#22543d' }}>
                                                     {s.subscription_plan}
                                                 </span>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                                    <button
-                                                        onClick={() => handleEdit(s)}
-                                                        style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#667eea', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                                                    >
-                                                        ✏️ Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(s.id)}
-                                                        style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                                                    >
-                                                        🗑️ Delete
-                                                    </button>
+                                                    <button onClick={() => handleEdit(s)} style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#667eea', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✏️ Edit</button>
+                                                    <button onClick={() => handleDelete(s.id)} style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>🗑️ Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -392,7 +301,6 @@ const SuperAdminSchools = () => {
                 </>
             )}
 
-            {/* ============ ADMINS ACTIVITY TAB ============ */}
             {activeTab === 'admins' && (
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                     <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
@@ -430,9 +338,7 @@ const SuperAdminSchools = () => {
                                                 {admin.school_name || `School #${admin.school_id || '—'}`}
                                             </td>
                                             <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                                {admin.last_login
-                                                    ? new Date(admin.last_login).toLocaleString()
-                                                    : 'Never'}
+                                                {admin.last_login ? new Date(admin.last_login).toLocaleString() : 'Never'}
                                             </td>
                                             <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>
                                                 {admin.login_count}
