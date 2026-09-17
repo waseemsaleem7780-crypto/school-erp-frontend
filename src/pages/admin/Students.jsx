@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { downloadExcel } from '../../utils/exportUtils';
 
 const Students = () => {
     const [students, setStudents] = useState([]);
@@ -82,6 +83,17 @@ const Students = () => {
         return roll.includes(term) || id.includes(term) || userId.includes(term);
     });
 
+    const handleExport = async () => {
+        setMessage({ type: '', text: 'Downloading...' });
+        const result = await downloadExcel('/export/students/excel', 'students.xlsx');
+        if (result.success) {
+            setMessage({ type: 'success', text: 'Excel downloaded! ✅' });
+        } else {
+            setMessage({ type: 'error', text: result.error });
+        }
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -157,22 +169,40 @@ const Students = () => {
                     <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Students</h1>
                     <p style={{ color: '#718096', margin: 0 }}>Manage all enrolled students</p>
                 </div>
-                <button
-                    onClick={() => showForm ? handleCancel() : setShowForm(true)}
-                    style={{
-                        padding: '12px 24px',
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        color: 'white',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                    }}
-                >
-                    {showForm ? '✕ Cancel' : '+ Add Student'}
-                </button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <button
+                        onClick={handleExport}
+                        style={{
+                            padding: '12px 24px',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: 'white',
+                            background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 15px rgba(72, 187, 120, 0.4)',
+                        }}
+                    >
+                        📥 Export Excel
+                    </button>
+                    <button
+                        onClick={() => showForm ? handleCancel() : setShowForm(true)}
+                        style={{
+                            padding: '12px 24px',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: 'white',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                        }}
+                    >
+                        {showForm ? '✕ Cancel' : '+ Add Student'}
+                    </button>
+                </div>
             </div>
 
             {message.text && (
@@ -180,8 +210,8 @@ const Students = () => {
                     padding: '14px 20px',
                     borderRadius: '10px',
                     marginBottom: '20px',
-                    backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
-                    color: message.type === 'success' ? '#22543d' : '#c53030',
+                    backgroundColor: message.type === 'success' ? '#c6f6d5' : message.type === 'error' ? '#fed7d7' : '#bee3f8',
+                    color: message.type === 'success' ? '#22543d' : message.type === 'error' ? '#c53030' : '#2c5282',
                 }}>
                     {message.text}
                 </div>
