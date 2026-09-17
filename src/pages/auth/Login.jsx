@@ -23,7 +23,10 @@ const Login = () => {
             const payload = JSON.parse(atob(token.split('.')[1]));
             const role = payload.role;
 
-            if (role === 'admin') {
+            // ✅ Role-based redirect
+            if (role === 'super_admin') {
+                window.location.href = '/superadmin/schools';
+            } else if (role === 'admin') {
                 window.location.href = '/admin/dashboard';
             } else if (role === 'teacher') {
                 window.location.href = '/teacher/dashboard';
@@ -56,7 +59,6 @@ const Login = () => {
                 maxWidth: '420px',
                 padding: '50px 40px',
             }}>
-                {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                     <div style={{
                         display: 'inline-flex',
@@ -88,7 +90,6 @@ const Login = () => {
                     </p>
                 </div>
 
-                {/* Error Message */}
                 {error && (
                     <div style={{
                         backgroundColor: '#fed7d7',
@@ -103,7 +104,6 @@ const Login = () => {
                     </div>
                 )}
 
-                {/* Form */}
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{
@@ -183,7 +183,6 @@ const Login = () => {
                     </button>
                 </form>
 
-                {/* Footer */}
                 <p style={{
                     textAlign: 'center',
                     color: '#a0aec0',

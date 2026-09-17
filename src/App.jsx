@@ -5,6 +5,9 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './pages/auth/Login';
 import Layout from './components/layout/Layout';
 
+// Super Admin Pages
+import SuperAdminSchools from './pages/superadmin/Schools';
+
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
 import Students from './pages/admin/Students';
@@ -57,6 +60,13 @@ function App() {
                 <Toaster position="top-right" />
                 <Routes>
                     <Route path="/login" element={<Login />} />
+
+                    {/* Super Admin Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/superadmin/schools" element={<SuperAdminSchools />} />
+                        </Route>
+                    </Route>
 
                     {/* Admin Routes */}
                     <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

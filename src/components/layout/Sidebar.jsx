@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 const Sidebar = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
-    
+
     let role = 'admin';
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -12,6 +12,12 @@ const Sidebar = () => {
         role = 'admin';
     }
 
+    // Super Admin Menu
+    const superAdminMenu = [
+        { name: 'Schools Management', path: '/superadmin/schools', icon: '🏫' },
+    ];
+
+    // Admin Menu
     const adminMenu = [
         { name: 'Dashboard', path: '/admin/dashboard' },
         { name: 'Students', path: '/admin/students' },
@@ -35,6 +41,7 @@ const Sidebar = () => {
         { name: 'Analytics', path: '/admin/analytics', icon: '📊' }
     ];
 
+    // Teacher Menu
     const teacherMenu = [
         { name: 'Dashboard', path: '/teacher/dashboard' },
         { name: 'My Classes', path: '/teacher/my-classes' },
@@ -48,6 +55,7 @@ const Sidebar = () => {
         { name: 'Notice Board', path: '/teacher/notice-board' },
     ];
 
+    // Student Menu
     const studentMenu = [
         { name: 'Dashboard', path: '/student/dashboard' },
         { name: 'My Attendance', path: '/student/my-attendance' },
@@ -60,14 +68,31 @@ const Sidebar = () => {
         { name: 'Notice Board', path: '/student/notice-board' },
     ];
 
-    const menuItems = role === 'admin' ? adminMenu : role === 'teacher' ? teacherMenu : studentMenu;
+    // Role-based menu
+    let menuItems = [];
+    let roleLabel = 'Admin';
+
+    if (role === 'super_admin') {
+        menuItems = superAdminMenu;
+        roleLabel = 'Super Admin';
+    } else if (role === 'admin') {
+        menuItems = adminMenu;
+        roleLabel = 'Admin';
+    } else if (role === 'teacher') {
+        menuItems = teacherMenu;
+        roleLabel = 'Teacher';
+    } else if (role === 'student') {
+        menuItems = studentMenu;
+        roleLabel = 'Student';
+    } else {
+        menuItems = adminMenu;
+        roleLabel = 'Admin';
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         navigate('/login');
     };
-
-    const roleLabel = role === 'admin' ? 'Admin' : role === 'teacher' ? 'Teacher' : 'Student';
 
     return (
         <div style={{
@@ -90,9 +115,9 @@ const Sidebar = () => {
             </div>
 
             {/* Menu - Scrollable */}
-            <nav style={{ 
-                flex: 1, 
-                padding: '12px', 
+            <nav style={{
+                flex: 1,
+                padding: '12px',
                 overflowY: 'auto',
                 overflowX: 'hidden',
             }}>
