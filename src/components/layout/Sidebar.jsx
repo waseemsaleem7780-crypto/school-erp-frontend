@@ -1,10 +1,14 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const params = useParams();
     const token = localStorage.getItem('token');
 
     let role = 'admin';
+    let schoolSlug = params.schoolSlug || null;
+
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         role = payload.role;
@@ -12,56 +16,68 @@ const Sidebar = () => {
         role = 'admin';
     }
 
+    // Agar URL mein schoolSlug hai to use karo (path se)
+    if (!schoolSlug) {
+        const pathParts = location.pathname.split('/').filter(Boolean);
+        // /test-school/admin/dashboard → ['test-school', 'admin', 'dashboard']
+        if (pathParts.length >= 3 && !['superadmin', 'admin', 'teacher', 'student', 'login'].includes(pathParts[0])) {
+            schoolSlug = pathParts[0];
+        }
+    }
+
+    // School slug prefix
+    const prefix = schoolSlug ? `/${schoolSlug}` : '';
+
     const superAdminMenu = [
         { name: 'Schools Management', path: '/superadmin/schools', icon: '🏫' },
     ];
 
     const adminMenu = [
-        { name: 'Dashboard', path: '/admin/dashboard' },
-        { name: 'Students', path: '/admin/students' },
-        { name: 'Classes', path: '/admin/classes' },
-        { name: 'Sections', path: '/admin/sections' },
-        { name: 'Subjects', path: '/admin/subjects' },
-        { name: 'Teachers', path: '/admin/teachers' },
-        { name: 'Attendance', path: '/admin/attendance' },
-        { name: 'Fees', path: '/admin/fees' },
-        { name: 'Concession', path: '/admin/concession' },
-        { name: 'Homework', path: '/admin/homework' },
-        { name: 'Assignments', path: '/admin/assignments' },
-        { name: 'Exams', path: '/admin/exams' },
-        { name: 'Results', path: '/admin/results' },
-        { name: 'Notice Board', path: '/admin/notice-board' },
-        { name: 'Study Material', path: '/admin/study-material' },
-        { name: 'Guardians', path: '/admin/guardians' },
-        { name: 'Timetable', path: '/admin/timetable' },
-        { name: 'Academic Years', path: '/admin/academic-years' },
-        { name: 'School Settings', path: '/admin/settings' },
-        { name: 'Analytics', path: '/admin/analytics' }
+        { name: 'Dashboard', path: `${prefix}/admin/dashboard` },
+        { name: 'Students', path: `${prefix}/admin/students` },
+        { name: 'Classes', path: `${prefix}/admin/classes` },
+        { name: 'Sections', path: `${prefix}/admin/sections` },
+        { name: 'Subjects', path: `${prefix}/admin/subjects` },
+        { name: 'Teachers', path: `${prefix}/admin/teachers` },
+        { name: 'Attendance', path: `${prefix}/admin/attendance` },
+        { name: 'Fees', path: `${prefix}/admin/fees` },
+        { name: 'Concession', path: `${prefix}/admin/concession` },
+        { name: 'Homework', path: `${prefix}/admin/homework` },
+        { name: 'Assignments', path: `${prefix}/admin/assignments` },
+        { name: 'Exams', path: `${prefix}/admin/exams` },
+        { name: 'Results', path: `${prefix}/admin/results` },
+        { name: 'Notice Board', path: `${prefix}/admin/notice-board` },
+        { name: 'Study Material', path: `${prefix}/admin/study-material` },
+        { name: 'Guardians', path: `${prefix}/admin/guardians` },
+        { name: 'Timetable', path: `${prefix}/admin/timetable` },
+        { name: 'Academic Years', path: `${prefix}/admin/academic-years` },
+        { name: 'School Settings', path: `${prefix}/admin/settings` },
+        { name: 'Analytics', path: `${prefix}/admin/analytics` }
     ];
 
     const teacherMenu = [
-        { name: 'Dashboard', path: '/teacher/dashboard' },
-        { name: 'My Classes', path: '/teacher/my-classes' },
-        { name: 'My Students', path: '/teacher/my-students' },
-        { name: 'Mark Attendance', path: '/teacher/mark-attendance' },
-        { name: 'Homework', path: '/teacher/homework' },
-        { name: 'Assignments', path: '/teacher/assignments' },
-        { name: 'Marks Entry', path: '/teacher/marks-entry' },
-        { name: 'Timetable', path: '/teacher/timetable' },
-        { name: 'Study Material', path: '/teacher/study-material' },
-        { name: 'Notice Board', path: '/teacher/notice-board' },
+        { name: 'Dashboard', path: `${prefix}/teacher/dashboard` },
+        { name: 'My Classes', path: `${prefix}/teacher/my-classes` },
+        { name: 'My Students', path: `${prefix}/teacher/my-students` },
+        { name: 'Mark Attendance', path: `${prefix}/teacher/mark-attendance` },
+        { name: 'Homework', path: `${prefix}/teacher/homework` },
+        { name: 'Assignments', path: `${prefix}/teacher/assignments` },
+        { name: 'Marks Entry', path: `${prefix}/teacher/marks-entry` },
+        { name: 'Timetable', path: `${prefix}/teacher/timetable` },
+        { name: 'Study Material', path: `${prefix}/teacher/study-material` },
+        { name: 'Notice Board', path: `${prefix}/teacher/notice-board` },
     ];
 
     const studentMenu = [
-        { name: 'Dashboard', path: '/student/dashboard' },
-        { name: 'My Attendance', path: '/student/my-attendance' },
-        { name: 'My Homework', path: '/student/my-homework' },
-        { name: 'My Assignments', path: '/student/my-assignments' },
-        { name: 'My Timetable', path: '/student/my-timetable' },
-        { name: 'My Results', path: '/student/my-results' },
-        { name: 'My Fees', path: '/student/my-fees' },
-        { name: 'Study Material', path: '/student/study-material' },
-        { name: 'Notice Board', path: '/student/notice-board' },
+        { name: 'Dashboard', path: `${prefix}/student/dashboard` },
+        { name: 'My Attendance', path: `${prefix}/student/my-attendance` },
+        { name: 'My Homework', path: `${prefix}/student/my-homework` },
+        { name: 'My Assignments', path: `${prefix}/student/my-assignments` },
+        { name: 'My Timetable', path: `${prefix}/student/my-timetable` },
+        { name: 'My Results', path: `${prefix}/student/my-results` },
+        { name: 'My Fees', path: `${prefix}/student/my-fees` },
+        { name: 'Study Material', path: `${prefix}/student/study-material` },
+        { name: 'Notice Board', path: `${prefix}/student/notice-board` },
     ];
 
     let menuItems = [];
