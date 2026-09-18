@@ -59,7 +59,9 @@ function App() {
             <BrowserRouter>
                 <Toaster position="top-right" />
                 <Routes>
+                    {/* Public Login Routes */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/:schoolSlug/login" element={<Login />} />
 
                     {/* Super Admin Routes */}
                     <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
@@ -68,7 +70,33 @@ function App() {
                         </Route>
                     </Route>
 
-                    {/* Admin Routes */}
+                    {/* Admin Routes (with school slug) */}
+                    <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/:schoolSlug/admin/dashboard" element={<AdminDashboard />} />
+                            <Route path="/:schoolSlug/admin/students" element={<Students />} />
+                            <Route path="/:schoolSlug/admin/classes" element={<Classes />} />
+                            <Route path="/:schoolSlug/admin/sections" element={<Sections />} />
+                            <Route path="/:schoolSlug/admin/subjects" element={<Subjects />} />
+                            <Route path="/:schoolSlug/admin/teachers" element={<Teachers />} />
+                            <Route path="/:schoolSlug/admin/attendance" element={<Attendance />} />
+                            <Route path="/:schoolSlug/admin/fees" element={<Fees />} />
+                            <Route path="/:schoolSlug/admin/concession" element={<Concession />} />
+                            <Route path="/:schoolSlug/admin/homework" element={<Homework />} />
+                            <Route path="/:schoolSlug/admin/assignments" element={<Assignments />} />
+                            <Route path="/:schoolSlug/admin/exams" element={<Exams />} />
+                            <Route path="/:schoolSlug/admin/results" element={<Results />} />
+                            <Route path="/:schoolSlug/admin/notice-board" element={<NoticeBoard />} />
+                            <Route path="/:schoolSlug/admin/study-material" element={<StudyMaterial />} />
+                            <Route path="/:schoolSlug/admin/guardians" element={<Guardians />} />
+                            <Route path="/:schoolSlug/admin/timetable" element={<Timetable />} />
+                            <Route path="/:schoolSlug/admin/academic-years" element={<AcademicYears />} />
+                            <Route path="/:schoolSlug/admin/settings" element={<SchoolSettings />} />
+                            <Route path="/:schoolSlug/admin/analytics" element={<Analytics />} />
+                        </Route>
+                    </Route>
+
+                    {/* Admin Routes (without school slug — fallback) */}
                     <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                         <Route element={<Layout />}>
                             <Route path="/admin/dashboard" element={<AdminDashboard />} />
