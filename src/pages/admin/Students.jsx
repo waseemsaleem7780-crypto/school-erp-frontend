@@ -128,12 +128,13 @@ const Students = () => {
 
         try {
             if (editingId) {
-                // Edit — only roll, class, section
+                // ✅ Edit — password optional
                 await api.put(`/students/${editingId}`, {
                     user_id: 1,
                     roll_number: form.roll_number,
                     class_id: parseInt(form.class_id),
                     section_id: parseInt(form.section_id),
+                    password: form.password || null,  // ✅ Naya
                 });
                 setMessage({ type: 'success', text: 'Student updated! ✅' });
             } else {
@@ -268,19 +269,6 @@ const Students = () => {
                         {editingId ? '✏️ Edit Student' : '➕ Add New Student'}
                     </h3>
 
-                    {!editingId && (
-                        <div style={{
-                            backgroundColor: '#e6fffa',
-                            border: '1px solid #81e6d9',
-                            borderRadius: '8px',
-                            padding: '12px 16px',
-                            marginBottom: '20px',
-                            fontSize: '13px',
-                            color: '#285e61',
-                        }}>
-                        </div>
-                    )}
-
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         {/* Full Name */}
                         <div>
@@ -310,21 +298,21 @@ const Students = () => {
                             />
                         </div>
 
-                        {/* Password (only add) */}
-                        {!editingId && (
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Password *</label>
-                                <input
-                                    type="text"
-                                    value={form.password}
-                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                    placeholder="Min 8 characters"
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    required={!editingId}
-                                    minLength={8}
-                                />
-                            </div>
-                        )}
+                        {/* Password — Add aur Edit dono mein */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
+                                Password {editingId ? '(Optional — Change Password)' : '*'}
+                            </label>
+                            <input
+                                type="text"
+                                value={form.password}
+                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                placeholder={editingId ? "Khaali chhodo to change nahi hoga" : "Min 8 characters"}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required={!editingId}
+                                minLength={8}
+                            />
+                        </div>
 
                         {/* Roll Number */}
                         <div>
