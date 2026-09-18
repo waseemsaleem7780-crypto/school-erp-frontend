@@ -6,13 +6,14 @@ const Teachers = () => {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [message, setMessage] = useState({ type: '', text: '' });
-    const [showForm, setShowForm] = useState(false);
+    const [activeTab, setActiveTab] = useState('list');
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState(null);
 
     const [form, setForm] = useState({
         user_id: '',
         qualification: '',
+        phone: '',
     });
 
     useEffect(() => {
@@ -30,7 +31,6 @@ const Teachers = () => {
         }
     };
 
-    // ✅ Name, email, phone bhi search mein
     const filteredTeachers = teachers.filter((t) =>
         (t.teacher_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (t.teacher_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,20 +50,24 @@ const Teachers = () => {
                 await api.put(`/teachers/${editingId}`, {
                     user_id: parseInt(form.user_id) || 1,
                     qualification: form.qualification,
+                    phone: form.phone || null,
                 });
                 setMessage({ type: 'success', text: 'Teacher updated! ✅' });
             } else {
                 await api.post('/teachers/', {
                     user_id: parseInt(form.user_id),
                     qualification: form.qualification,
+                    phone: form.phone || null,
                 });
                 setMessage({ type: 'success', text: 'Teacher added! ✅' });
             }
-            setForm({ user_id: '', qualification: '' });
+            setForm({ user_id: '', qualification: '', phone: '' });
             setEditingId(null);
-            setShowForm(false);
             fetchTeachers();
-            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            setTimeout(() => {
+                setMessage({ type: '', text: '' });
+                setActiveTab('list');
+            }, 2000);
         } catch (error) {
             setMessage({
                 type: 'error',
@@ -78,9 +82,10 @@ const Teachers = () => {
         setForm({
             user_id: teacher.user_id,
             qualification: teacher.qualification,
+            phone: teacher.teacher_phone !== '—' ? teacher.teacher_phone : '',
         });
         setEditingId(teacher.id);
-        setShowForm(true);
+        setActiveTab('add');
     };
 
     const handleDelete = async (id) => {
@@ -97,33 +102,58 @@ const Teachers = () => {
     };
 
     const handleCancel = () => {
-        setForm({ user_id: '', qualification: '' });
+        setForm({ user_id: '', qualification: '', phone: '' });
         setEditingId(null);
-        setShowForm(false);
+        setActiveTab('list');
     };
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Teachers</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Manage all teaching staff</p>
-                </div>
+            <div style={{ marginBottom: '30px' }}>
+                <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Teachers</h1>
+                <p style={{ color: '#718096', margin: 0 }}>Manage all teaching staff</p>
+            </div>
+
+            {/* 2 TABS */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '24px',
+                backgroundColor: 'white',
+                padding: '8px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                width: 'fit-content',
+            }}>
                 <button
-                    onClick={() => showForm ? handleCancel() : setShowForm(true)}
+                    onClick={() => { setActiveTab('list'); setEditingId(null); setForm({ user_id: '', qualification: '', phone: '' }); }}
                     style={{
-                        padding: '12px 24px',
-                        fontSize: '15px',
+                        padding: '10px 24px',
+                        fontSize: '14px',
                         fontWeight: '600',
-                        color: 'white',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         border: 'none',
-                        borderRadius: '10px',
+                        borderRadius: '8px',
                         cursor: 'pointer',
-                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                        backgroundColor: activeTab === 'list' ? '#667eea' : 'transparent',
+                        color: activeTab === 'list' ? 'white' : '#4a5568',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Add Teacher'}
+                    📋 All Teachers ({teachers.length})
+                </button>
+                <button
+                    onClick={() => { setActiveTab('add'); setEditingId(null); setForm({ user_id: '', qualification: '', phone: '' }); }}
+                    style={{
+                        padding: '10px 24px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        backgroundColor: activeTab === 'add' ? '#667eea' : 'transparent',
+                        color: activeTab === 'add' ? 'white' : '#4a5568',
+                    }}
+                >
+                    ➕ Add Teacher
                 </button>
             </div>
 
@@ -139,7 +169,8 @@ const Teachers = () => {
                 </div>
             )}
 
-            {showForm && (
+            {/* ADD TAB */}
+            {activeTab === 'add' && (
                 <div style={{
                     backgroundColor: 'white',
                     borderRadius: '16px',
@@ -148,7 +179,7 @@ const Teachers = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
-                        {editingId ? 'Edit Teacher' : 'Add New Teacher'}
+                        {editingId ? '✏️ Edit Teacher' : '➕ Add New Teacher'}
                     </h3>
 
                     <div style={{
@@ -165,7 +196,7 @@ const Teachers = () => {
 
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>User ID</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>User ID *</label>
                             <input
                                 type="number"
                                 value={form.user_id}
@@ -177,7 +208,7 @@ const Teachers = () => {
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Qualification</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Qualification *</label>
                             <input
                                 type="text"
                                 value={form.qualification}
@@ -188,7 +219,18 @@ const Teachers = () => {
                             />
                         </div>
 
-                        <div style={{ gridColumn: '1 / -1' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone (Optional)</label>
+                            <input
+                                type="text"
+                                value={form.phone}
+                                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                placeholder="e.g., +92-300-1234567"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                        </div>
+
+                        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -205,137 +247,158 @@ const Teachers = () => {
                             >
                                 {loading ? 'Saving...' : (editingId ? '💾 Update Teacher' : '💾 Save Teacher')}
                             </button>
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                style={{
+                                    padding: '14px 32px',
+                                    fontSize: '15px',
+                                    fontWeight: '600',
+                                    color: '#4a5568',
+                                    background: '#e2e8f0',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                ✕ Cancel
+                            </button>
                         </div>
                     </form>
                 </div>
             )}
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '24px',
-                marginBottom: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-            }}>
-                <div style={{ fontSize: '36px' }}>👨‍🏫</div>
-                <div>
-                    <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total Teachers</p>
-                    <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
-                        {teachers.length}
-                    </p>
-                </div>
-            </div>
-
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔎 Search Teachers
-                </label>
-                <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name, email, phone, qualification, ID..."
-                    style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        fontSize: '15px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '10px',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                    }}
-                />
-            </div>
-
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>All Teachers ({filteredTeachers.length})</h3>
-                </div>
-
-                {fetching ? (
-                    <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
-                        Loading...
+            {/* LIST TAB */}
+            {activeTab === 'list' && (
+                <>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '24px',
+                        marginBottom: '24px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                    }}>
+                        <div style={{ fontSize: '36px' }}>👨‍🏫</div>
+                        <div>
+                            <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total Teachers</p>
+                            <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
+                                {teachers.length}
+                            </p>
+                        </div>
                     </div>
-                ) : filteredTeachers.length === 0 ? (
-                    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
-                        <p style={{ color: '#718096' }}>
-                            {searchTerm ? 'No teachers match your search' : 'No teachers yet'}
-                        </p>
+
+                    <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                            🔎 Search Teachers
+                        </label>
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search by name, email, phone, qualification, ID..."
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                fontSize: '15px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '10px',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                            }}
+                        />
                     </div>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f7fafc' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Teacher</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Email</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Phone</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Qualification</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Hired Date</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredTeachers.map((t) => (
-                                <tr key={t.id} style={{ borderTop: '1px solid #e2e8f0' }}>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>#{t.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>
-                                        {t.teacher_name || `Teacher #${t.id}`}
-                                    </td>
-                                    <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                        {t.teacher_email || '—'}
-                                    </td>
-                                    <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                        📱 {t.teacher_phone || '—'}
-                                    </td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{t.qualification}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                        {t.hired_date ? new Date(t.hired_date).toLocaleDateString() : 'N/A'}
-                                    </td>
-                                    <td style={{ padding: '16px 24px' }}>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button
-                                                onClick={() => handleEdit(t)}
-                                                style={{
-                                                    padding: '6px 14px',
-                                                    fontSize: '13px',
-                                                    fontWeight: '600',
-                                                    color: 'white',
-                                                    background: '#667eea',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                ✏️ Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(t.id)}
-                                                style={{
-                                                    padding: '6px 14px',
-                                                    fontSize: '13px',
-                                                    fontWeight: '600',
-                                                    color: 'white',
-                                                    background: '#dc2626',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                🗑️ Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+
+                    <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                            <h3 style={{ margin: 0, color: '#1a202c' }}>All Teachers ({filteredTeachers.length})</h3>
+                        </div>
+
+                        {fetching ? (
+                            <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
+                        ) : filteredTeachers.length === 0 ? (
+                            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
+                                <p style={{ color: '#718096' }}>
+                                    {searchTerm ? 'No teachers match your search' : 'No teachers yet'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: '#f7fafc' }}>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Teacher Name</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Email</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Phone</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Qualification</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Hired Date</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredTeachers.map((t) => (
+                                            <tr key={t.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                                                <td style={{ padding: '16px 24px', color: '#718096' }}>#{t.id}</td>
+                                                <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>
+                                                    {t.teacher_name || `Teacher #${t.id}`}
+                                                </td>
+                                                <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
+                                                    {t.teacher_email || '—'}
+                                                </td>
+                                                <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
+                                                    📱 {t.teacher_phone || '—'}
+                                                </td>
+                                                <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{t.qualification}</td>
+                                                <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
+                                                    {t.hired_date ? new Date(t.hired_date).toLocaleDateString() : 'N/A'}
+                                                </td>
+                                                <td style={{ padding: '16px 24px' }}>
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button
+                                                            onClick={() => handleEdit(t)}
+                                                            style={{
+                                                                padding: '6px 14px',
+                                                                fontSize: '13px',
+                                                                fontWeight: '600',
+                                                                color: 'white',
+                                                                background: '#667eea',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            ✏️ Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(t.id)}
+                                                            style={{
+                                                                padding: '6px 14px',
+                                                                fontSize: '13px',
+                                                                fontWeight: '600',
+                                                                color: 'white',
+                                                                background: '#dc2626',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            🗑️ Delete
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 };
