@@ -13,7 +13,6 @@ const Students = () => {
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // ✅ Full form fields
     const [form, setForm] = useState({
         full_name: '',
         email: '',
@@ -128,13 +127,16 @@ const Students = () => {
 
         try {
             if (editingId) {
-                // ✅ Edit — password optional
+                // ✅ Edit — full_name, email, phone, password sab update
                 await api.put(`/students/${editingId}`, {
                     user_id: 1,
                     roll_number: form.roll_number,
                     class_id: parseInt(form.class_id),
                     section_id: parseInt(form.section_id),
-                    password: form.password || null,  // ✅ Naya
+                    full_name: form.full_name,
+                    email: form.email,
+                    phone: form.phone || null,
+                    password: form.password || null,
                 });
                 setMessage({ type: 'success', text: 'Student updated! ✅' });
             } else {
@@ -280,7 +282,6 @@ const Students = () => {
                                 placeholder="e.g., Ali Khan"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
-                                disabled={!!editingId}
                             />
                         </div>
 
@@ -294,11 +295,10 @@ const Students = () => {
                                 placeholder="student@school.com"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
-                                disabled={!!editingId}
                             />
                         </div>
 
-                        {/* Password — Add aur Edit dono mein */}
+                        {/* Password */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
                                 Password {editingId ? '(Optional — Change Password)' : '*'}
