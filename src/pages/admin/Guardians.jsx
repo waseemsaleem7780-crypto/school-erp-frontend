@@ -85,7 +85,6 @@ const Guardians = () => {
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '2px solid #e2e8f0' }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Guardian</h3>
                     <div style={{ backgroundColor: '#ebf8ff', border: '1px solid #90cdf4', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#2c5282' }}>
-                        💡 <strong>Pehle User banao:</strong> Swagger mein <code>POST /api/auth/register</code> se Parent user banao (role: "parent"), phir yahan uski ID daalo.
                     </div>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
