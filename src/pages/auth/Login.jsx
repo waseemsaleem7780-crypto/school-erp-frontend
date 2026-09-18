@@ -1,15 +1,35 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/axios';
+import { getSubdomain } from '../../utils/subdomain';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [schoolInfo, setSchoolInfo] = useState(null);
 
     const { login } = useAuth();
     const navigate = useNavigate();
+    const params = useParams();
+
+    // School slug from URL path OR subdomain
+    const schoolSlug = params.schoolSlug || getSubdomain();
+
+    useEffect(() => {
+        if (schoolSlug) {
+            api.get(`/schools/by-subdomain/${schoolSlug}`)
+                .then(res => {
+                    setSchoolInfo(res.data);
+                    document.title = `${res.data.name} - Login`;
+                })
+                .catch(() => {
+                    setError('School not found. Please check the URL.');
+                });
+        }
+    }, [schoolSlug]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -22,16 +42,27 @@ const Login = () => {
             const token = localStorage.getItem('token');
             const payload = JSON.parse(atob(token.split('.')[1]));
             const role = payload.role;
+            const tokenSchoolSlug = payload.school_slug;  // ✅ Token se school slug
 
-            // ✅ Role-based redirect
+            // ✅ Final school slug determine karo
+            // Priority: Token > URL > null
+            const finalSlug = tokenSchoolSlug || schoolSlug;
+
+            // ✅ Role aur school slug ke hisaab se redirect
             if (role === 'super_admin') {
                 window.location.href = '/superadmin/schools';
             } else if (role === 'admin') {
-                window.location.href = '/admin/dashboard';
+                window.location.href = finalSlug 
+                    ? `/${finalSlug}/admin/dashboard` 
+                    : '/admin/dashboard';
             } else if (role === 'teacher') {
-                window.location.href = '/teacher/dashboard';
+                window.location.href = finalSlug 
+                    ? `/${finalSlug}/teacher/dashboard` 
+                    : '/teacher/dashboard';
             } else if (role === 'student') {
-                window.location.href = '/student/dashboard';
+                window.location.href = finalSlug 
+                    ? `/${finalSlug}/student/dashboard` 
+                    : '/student/dashboard';
             } else {
                 window.location.href = '/login';
             }
@@ -74,19 +105,19 @@ const Login = () => {
                         🎓
                     </div>
                     <h1 style={{
-                        fontSize: '28px',
+                        fontSize: schoolInfo ? '24px' : '28px',
                         fontWeight: 'bold',
                         color: '#1a202c',
                         margin: '0 0 8px 0',
                     }}>
-                        School ERP
+                        {schoolInfo ? schoolInfo.name : 'School ERP'}
                     </h1>
                     <p style={{
                         color: '#718096',
                         fontSize: '14px',
                         margin: 0,
                     }}>
-                        Sign in to your account
+                        {schoolInfo ? 'Sign in to your school account' : 'Sign in to your account'}
                     </p>
                 </div>
 
