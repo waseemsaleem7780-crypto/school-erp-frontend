@@ -1,4 +1,3 @@
-cat > src/pages/superadmin/Schools.jsx << 'EOF'
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 
@@ -410,4 +409,3 @@ const SuperAdminSchools = () => {
 };
 
 export default SuperAdminSchools;
-EOF
