@@ -122,7 +122,7 @@ function App() {
                         </Route>
                     </Route>
 
-                    {/* Teacher Routes */}
+                    {/* Teacher Routes (without slug — fallback) */}
                     <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
                         <Route element={<Layout />}>
                             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
@@ -138,7 +138,23 @@ function App() {
                         </Route>
                     </Route>
 
-                    {/* Student Routes */}
+                    {/* ✅ Teacher Routes (with school slug) — NEW */}
+                    <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/:schoolSlug/teacher/dashboard" element={<TeacherDashboard />} />
+                            <Route path="/:schoolSlug/teacher/my-classes" element={<MyClasses />} />
+                            <Route path="/:schoolSlug/teacher/my-students" element={<MyStudents />} />
+                            <Route path="/:schoolSlug/teacher/mark-attendance" element={<MarkAttendance />} />
+                            <Route path="/:schoolSlug/teacher/homework" element={<TeacherHomework />} />
+                            <Route path="/:schoolSlug/teacher/assignments" element={<TeacherAssignments />} />
+                            <Route path="/:schoolSlug/teacher/marks-entry" element={<MarksEntry />} />
+                            <Route path="/:schoolSlug/teacher/timetable" element={<TeacherTimetable />} />
+                            <Route path="/:schoolSlug/teacher/study-material" element={<TeacherStudyMaterial />} />
+                            <Route path="/:schoolSlug/teacher/notice-board" element={<TeacherNoticeBoard />} />
+                        </Route>
+                    </Route>
+
+                    {/* Student Routes (without slug — fallback) */}
                     <Route element={<ProtectedRoute allowedRoles={['student']} />}>
                         <Route element={<Layout />}>
                             <Route path="/student/dashboard" element={<StudentDashboard />} />
@@ -150,6 +166,21 @@ function App() {
                             <Route path="/student/my-fees" element={<MyFees />} />
                             <Route path="/student/study-material" element={<StudentStudyMaterial />} />
                             <Route path="/student/notice-board" element={<StudentNoticeBoard />} />
+                        </Route>
+                    </Route>
+
+                    {/* ✅ Student Routes (with school slug) — NEW */}
+                    <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+                        <Route element={<Layout />}>
+                            <Route path="/:schoolSlug/student/dashboard" element={<StudentDashboard />} />
+                            <Route path="/:schoolSlug/student/my-attendance" element={<MyAttendance />} />
+                            <Route path="/:schoolSlug/student/my-homework" element={<MyHomework />} />
+                            <Route path="/:schoolSlug/student/my-assignments" element={<MyAssignments />} />
+                            <Route path="/:schoolSlug/student/my-timetable" element={<MyTimetable />} />
+                            <Route path="/:schoolSlug/student/my-results" element={<MyResults />} />
+                            <Route path="/:schoolSlug/student/my-fees" element={<MyFees />} />
+                            <Route path="/:schoolSlug/student/study-material" element={<StudentStudyMaterial />} />
+                            <Route path="/:schoolSlug/student/notice-board" element={<StudentNoticeBoard />} />
                         </Route>
                     </Route>
 
