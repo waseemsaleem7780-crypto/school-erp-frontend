@@ -30,8 +30,12 @@ const Teachers = () => {
         }
     };
 
+    // ✅ Name, email, phone bhi search mein
     const filteredTeachers = teachers.filter((t) =>
-        t.qualification.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.teacher_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.teacher_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.teacher_phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.qualification || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.id.toString().includes(searchTerm) ||
         t.user_id.toString().includes(searchTerm)
     );
@@ -166,7 +170,7 @@ const Teachers = () => {
                                 type="number"
                                 value={form.user_id}
                                 onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-                                placeholder="e.g., 2"
+                                placeholder="e.g., 8"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
                             />
@@ -233,7 +237,7 @@ const Teachers = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by qualification, ID, or user ID..."
+                    placeholder="Search by name, email, phone, qualification, ID..."
                     style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -267,7 +271,9 @@ const Teachers = () => {
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>User ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Teacher</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Email</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Phone</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Qualification</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Hired Date</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
@@ -277,7 +283,15 @@ const Teachers = () => {
                             {filteredTeachers.map((t) => (
                                 <tr key={t.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{t.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{t.user_id}</td>
+                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>
+                                        {t.teacher_name || `Teacher #${t.id}`}
+                                    </td>
+                                    <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
+                                        {t.teacher_email || '—'}
+                                    </td>
+                                    <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
+                                        📱 {t.teacher_phone || '—'}
+                                    </td>
                                     <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{t.qualification}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
                                         {t.hired_date ? new Date(t.hired_date).toLocaleDateString() : 'N/A'}
