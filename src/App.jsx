@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './pages/auth/Login';
 import Layout from './components/layout/Layout';
+import ChatWidget from './components/ChatWidget';
 
 // Super Admin Pages
 import SuperAdminSchools from './pages/superadmin/Schools';
@@ -187,6 +188,7 @@ function App() {
                     <Route path="/" element={<Navigate to="/login" />} />
                     <Route path="*" element={<Navigate to="/login" />} />
                 </Routes>
+                <ChatWidget />
             </BrowserRouter>
         </AuthProvider>
     );
