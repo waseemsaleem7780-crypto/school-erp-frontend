@@ -4,6 +4,7 @@ import api from '../../api/axios';
 const Subjects = () => {
     const [subjects, setSubjects] = useState([]);
     const [classes, setClasses] = useState([]);
+    const [teachers, setTeachers] = useState([]);  // ✅ NEW
     const [selectedClass, setSelectedClass] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -16,10 +17,12 @@ const Subjects = () => {
         name: '',
         code: '',
         class_id: '',
+        teacher_id: '',  // ✅ NEW
     });
 
     useEffect(() => {
         fetchClasses();
+        fetchTeachers();
         fetchAllSubjects();
     }, []);
 
@@ -32,6 +35,16 @@ const Subjects = () => {
         try {
             const res = await api.get('/classes/');
             setClasses(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // ✅ NEW: Teachers fetch karo
+    const fetchTeachers = async () => {
+        try {
+            const res = await api.get('/teachers/');
+            setTeachers(res.data);
         } catch (err) {
             console.error(err);
         }
@@ -68,10 +81,12 @@ const Subjects = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
+        // ✅ teacher_id bhi bhejo
         const payload = {
             name: form.name,
             code: form.code,
             class_id: parseInt(form.class_id),
+            teacher_id: form.teacher_id ? parseInt(form.teacher_id) : null,
         };
 
         try {
@@ -82,7 +97,7 @@ const Subjects = () => {
                 await api.post('/subjects/', payload);
                 setMessage({ type: 'success', text: 'Subject added! ✅' });
             }
-            setForm({ name: '', code: '', class_id: '' });
+            setForm({ name: '', code: '', class_id: '', teacher_id: '' });
             setEditingId(null);
             setShowForm(false);
             fetchAllSubjects();
@@ -102,6 +117,7 @@ const Subjects = () => {
             name: subject.name,
             code: subject.code,
             class_id: subject.class_id,
+            teacher_id: subject.teacher_id || '',
         });
         setEditingId(subject.id);
         setShowForm(true);
@@ -121,7 +137,7 @@ const Subjects = () => {
     };
 
     const handleCancel = () => {
-        setForm({ name: '', code: '', class_id: '' });
+        setForm({ name: '', code: '', class_id: '', teacher_id: '' });
         setEditingId(null);
         setShowForm(false);
     };
@@ -129,6 +145,14 @@ const Subjects = () => {
     const getClassName = (classId) => {
         const cls = classes.find((c) => c.id === classId);
         return cls ? cls.name : `Class #${classId}`;
+    };
+
+    // ✅ NEW: Teacher name dhundo
+    const getTeacherName = (teacherId) => {
+        if (!teacherId) return '—';
+        const t = teachers.find((t) => t.id === teacherId);
+        if (!t) return `Teacher #${teacherId}`;
+        return `Teacher #${t.id} (User ${t.user_id}) - ${t.qualification}`;
     };
 
     return (
@@ -215,6 +239,25 @@ const Subjects = () => {
                                 <option value="">Select Class</option>
                                 {classes.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* ✅ NEW: Teacher Dropdown */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
+                                Teacher (Optional)
+                            </label>
+                            <select
+                                value={form.teacher_id}
+                                onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                            >
+                                <option value="">-- No Teacher --</option>
+                                {teachers.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        Teacher #{t.id} (User {t.user_id}) - {t.qualification}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -322,6 +365,7 @@ const Subjects = () => {
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Subject</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Code</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Teacher</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
@@ -332,6 +376,9 @@ const Subjects = () => {
                                     <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.name}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096', fontFamily: 'monospace' }}>{s.code}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
+                                        {s.teacher_name || getTeacherName(s.teacher_id)}
+                                    </td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button
