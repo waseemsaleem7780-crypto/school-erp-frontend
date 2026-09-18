@@ -10,8 +10,11 @@ const Teachers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState(null);
 
+    // ✅ Full form fields
     const [form, setForm] = useState({
-        user_id: '',
+        full_name: '',
+        email: '',
+        password: '',
         qualification: '',
         phone: '',
     });
@@ -47,21 +50,25 @@ const Teachers = () => {
 
         try {
             if (editingId) {
+                // Edit — only qualification + phone
                 await api.put(`/teachers/${editingId}`, {
-                    user_id: parseInt(form.user_id) || 1,
+                    user_id: 1,
                     qualification: form.qualification,
                     phone: form.phone || null,
                 });
                 setMessage({ type: 'success', text: 'Teacher updated! ✅' });
             } else {
-                await api.post('/teachers/', {
-                    user_id: parseInt(form.user_id),
+                // ✅ Naya endpoint — user + teacher ek saath
+                await api.post('/teachers/create-with-user', {
+                    full_name: form.full_name,
+                    email: form.email,
+                    password: form.password,
                     qualification: form.qualification,
                     phone: form.phone || null,
                 });
-                setMessage({ type: 'success', text: 'Teacher added! ✅' });
+                setMessage({ type: 'success', text: 'Teacher created! ✅' });
             }
-            setForm({ user_id: '', qualification: '', phone: '' });
+            setForm({ full_name: '', email: '', password: '', qualification: '', phone: '' });
             setEditingId(null);
             fetchTeachers();
             setTimeout(() => {
@@ -80,7 +87,9 @@ const Teachers = () => {
 
     const handleEdit = (teacher) => {
         setForm({
-            user_id: teacher.user_id,
+            full_name: teacher.teacher_name || '',
+            email: teacher.teacher_email || '',
+            password: '',
             qualification: teacher.qualification,
             phone: teacher.teacher_phone !== '—' ? teacher.teacher_phone : '',
         });
@@ -102,7 +111,7 @@ const Teachers = () => {
     };
 
     const handleCancel = () => {
-        setForm({ user_id: '', qualification: '', phone: '' });
+        setForm({ full_name: '', email: '', password: '', qualification: '', phone: '' });
         setEditingId(null);
         setActiveTab('list');
     };
@@ -126,7 +135,7 @@ const Teachers = () => {
                 width: 'fit-content',
             }}>
                 <button
-                    onClick={() => { setActiveTab('list'); setEditingId(null); setForm({ user_id: '', qualification: '', phone: '' }); }}
+                    onClick={() => { setActiveTab('list'); handleCancel(); }}
                     style={{
                         padding: '10px 24px',
                         fontSize: '14px',
@@ -141,7 +150,7 @@ const Teachers = () => {
                     📋 All Teachers ({teachers.length})
                 </button>
                 <button
-                    onClick={() => { setActiveTab('add'); setEditingId(null); setForm({ user_id: '', qualification: '', phone: '' }); }}
+                    onClick={() => { setActiveTab('add'); setEditingId(null); setForm({ full_name: '', email: '', password: '', qualification: '', phone: '' }); }}
                     style={{
                         padding: '10px 24px',
                         fontSize: '14px',
@@ -183,30 +192,63 @@ const Teachers = () => {
                     </h3>
 
                     <div style={{
-                        backgroundColor: '#ebf8ff',
-                        border: '1px solid #90cdf4',
+                        backgroundColor: '#e6fffa',
+                        border: '1px solid #81e6d9',
                         borderRadius: '8px',
                         padding: '12px 16px',
                         marginBottom: '20px',
                         fontSize: '13px',
-                        color: '#2c5282',
+                        color: '#285e61',
                     }}>
-                        💡 <strong>Pehle User banao:</strong> Swagger mein <code>POST /api/auth/register</code> se Teacher user banao (role: "teacher"), phir yahan uski ID daalo.
+                        ✅ <strong>Ek hi step mein:</strong> User + Teacher dono ban jayenge. Koi Swagger ki zaroorat nahi!
                     </div>
 
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                        {/* Full Name */}
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>User ID *</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Full Name *</label>
                             <input
-                                type="number"
-                                value={form.user_id}
-                                onChange={(e) => setForm({ ...form, user_id: e.target.value })}
-                                placeholder="e.g., 8"
+                                type="text"
+                                value={form.full_name}
+                                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                                placeholder="e.g., Ali Khan"
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
+                                disabled={!!editingId}
                             />
                         </div>
 
+                        {/* Email */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Email *</label>
+                            <input
+                                type="email"
+                                value={form.email}
+                                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                placeholder="teacher@school.com"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                                disabled={!!editingId}
+                            />
+                        </div>
+
+                        {/* Password (only add) */}
+                        {!editingId && (
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Password *</label>
+                                <input
+                                    type="text"
+                                    value={form.password}
+                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                    placeholder="Min 8 characters"
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                    required={!editingId}
+                                    minLength={8}
+                                />
+                            </div>
+                        )}
+
+                        {/* Qualification */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Qualification *</label>
                             <input
@@ -219,6 +261,7 @@ const Teachers = () => {
                             />
                         </div>
 
+                        {/* Phone */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone (Optional)</label>
                             <input
