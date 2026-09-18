@@ -50,11 +50,12 @@ const Teachers = () => {
 
         try {
             if (editingId) {
-                // Edit — only qualification + phone
+                // ✅ Edit — password optional
                 await api.put(`/teachers/${editingId}`, {
                     user_id: 1,
                     qualification: form.qualification,
                     phone: form.phone || null,
+                    password: form.password || null,  // ✅ Naya
                 });
                 setMessage({ type: 'success', text: 'Teacher updated! ✅' });
             } else {
@@ -191,17 +192,6 @@ const Teachers = () => {
                         {editingId ? '✏️ Edit Teacher' : '➕ Add New Teacher'}
                     </h3>
 
-                    <div style={{
-                        backgroundColor: '#e6fffa',
-                        border: '1px solid #81e6d9',
-                        borderRadius: '8px',
-                        padding: '12px 16px',
-                        marginBottom: '20px',
-                        fontSize: '13px',
-                        color: '#285e61',
-                    }}>
-                    </div>
-
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         {/* Full Name */}
                         <div>
@@ -231,21 +221,21 @@ const Teachers = () => {
                             />
                         </div>
 
-                        {/* Password (only add) */}
-                        {!editingId && (
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Password *</label>
-                                <input
-                                    type="text"
-                                    value={form.password}
-                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                    placeholder="Min 8 characters"
-                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                    required={!editingId}
-                                    minLength={8}
-                                />
-                            </div>
-                        )}
+                        {/* Password — Add aur Edit dono mein */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
+                                Password {editingId ? '(Optional — Change Password)' : '*'}
+                            </label>
+                            <input
+                                type="text"
+                                value={form.password}
+                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                placeholder={editingId ? "Khaali chhodo to change nahi hoga" : "Min 8 characters"}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required={!editingId}
+                                minLength={8}
+                            />
+                        </div>
 
                         {/* Qualification */}
                         <div>
