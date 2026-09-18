@@ -278,7 +278,6 @@ const Students = () => {
                             fontSize: '13px',
                             color: '#285e61',
                         }}>
-                            ✅ <strong>Ek hi step mein:</strong> User + Student dono ban jayenge. Koi Swagger ki zaroorat nahi!
                         </div>
                     )}
 

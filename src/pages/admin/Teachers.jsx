@@ -200,7 +200,6 @@ const Teachers = () => {
                         fontSize: '13px',
                         color: '#285e61',
                     }}>
-                        ✅ <strong>Ek hi step mein:</strong> User + Teacher dono ban jayenge. Koi Swagger ki zaroorat nahi!
                     </div>
 
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
