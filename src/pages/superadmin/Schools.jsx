@@ -11,6 +11,7 @@ const SuperAdminSchools = () => {
     const [editingId, setEditingId] = useState(null);
     const [activeTab, setActiveTab] = useState('schools');
     const [createdSchool, setCreatedSchool] = useState(null);
+    const [setupMode, setSetupMode] = useState('manual'); // 'manual' or 'full'
 
     const [form, setForm] = useState({
         name: '',
@@ -20,6 +21,20 @@ const SuperAdminSchools = () => {
         admin_password: '',
         phone: '',
         address: '',
+    });
+
+    const [fullForm, setFullForm] = useState({
+        name: '',
+        subdomain: '',
+        admin_name: '',
+        admin_email: '',
+        admin_password: '',
+        phone: '',
+        address: '',
+        num_classes: 10,
+        num_sections: 3,
+        num_teachers: 30,
+        num_students: 100,
     });
 
     useEffect(() => {
@@ -44,13 +59,23 @@ const SuperAdminSchools = () => {
         }
     };
 
+    // ✅ Subdomain auto-clean helper
+    const cleanSubdomain = (value) => {
+        return value
+            .toLowerCase()
+            .replace(/\s/g, '-')
+            .replace(/\./g, '')        // Dots hatao
+            .replace(/[^a-z0-9-]/g, '') // Sirf valid chars
+            .replace(/-+/g, '-')        // Multiple hyphens → single
+            .replace(/^-|-$/g, '');     // Start/end hyphens hatao
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' });
 
         try {
             if (editingId) {
-                // Edit — only name, subdomain, email, phone, address
                 await api.put(`/schools/${editingId}`, {
                     name: form.name,
                     subdomain: form.subdomain,
@@ -64,7 +89,6 @@ const SuperAdminSchools = () => {
                 setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '' });
                 fetchAll();
             } else {
-                // Create — school + admin
                 const res = await api.post('/schools/with-admin', form);
                 setCreatedSchool(res.data);
                 setMessage({ type: 'success', text: 'School created! ✅' });
@@ -77,6 +101,29 @@ const SuperAdminSchools = () => {
             setMessage({
                 type: 'error',
                 text: error.response?.data?.detail || 'Failed to save school',
+            });
+        }
+    };
+
+    const handleFullSetup = async (e) => {
+        e.preventDefault();
+        setMessage({ type: '', text: 'Creating school with teachers and students... (may take 1-2 min)' });
+
+        try {
+            const res = await api.post('/schools/full-setup', fullForm);
+            setCreatedSchool({ ...res.data, isFullSetup: true });
+            setMessage({ type: 'success', text: `School created with ${res.data.total_students} students and ${res.data.total_teachers} teachers! ✅` });
+            setShowForm(false);
+            setFullForm({
+                name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '',
+                phone: '', address: '', num_classes: 10, num_sections: 3, num_teachers: 30, num_students: 100,
+            });
+            fetchAll();
+            setTimeout(() => setMessage({ type: '', text: '' }), 8000);
+        } catch (error) {
+            setMessage({
+                type: 'error',
+                text: error.response?.data?.detail || 'Failed to create school',
             });
         }
     };
@@ -94,6 +141,7 @@ const SuperAdminSchools = () => {
         setEditingId(school.id);
         setShowForm(true);
         setCreatedSchool(null);
+        setSetupMode('manual');
     };
 
     const handleDelete = async (id) => {
@@ -110,6 +158,10 @@ const SuperAdminSchools = () => {
 
     const handleCancel = () => {
         setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '' });
+        setFullForm({
+            name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '',
+            phone: '', address: '', num_classes: 10, num_sections: 3, num_teachers: 30, num_students: 100,
+        });
         setEditingId(null);
         setShowForm(false);
     };
@@ -195,6 +247,37 @@ const SuperAdminSchools = () => {
                     <h3 style={{ marginTop: 0, color: '#22543d' }}>
                         ✅ School Created Successfully!
                     </h3>
+
+                    {/* Full Setup Stats */}
+                    {createdSchool.isFullSetup && (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                            gap: '12px',
+                            marginBottom: '20px',
+                            padding: '16px',
+                            backgroundColor: '#f0fff4',
+                            borderRadius: '10px',
+                        }}>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>👨‍🏫 Teachers</p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_teachers}</p>
+                            </div>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>👨‍🎓 Students</p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_students}</p>
+                            </div>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>🏫 Classes</p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_classes}</p>
+                            </div>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>📚 Sections</p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_sections}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <p style={{ color: '#718096', marginBottom: '20px' }}>
                         Ye credentials school admin ko bhejo:
                     </p>
@@ -234,12 +317,29 @@ const SuperAdminSchools = () => {
                         </div>
                     </div>
 
+                    {createdSchool.isFullSetup && (
+                        <div style={{
+                            marginTop: '20px',
+                            padding: '16px',
+                            backgroundColor: '#fefcbf',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            color: '#744210',
+                        }}>
+                            <strong>📌 Default Passwords:</strong>
+                            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                                <li>Teachers: <code>{createdSchool.teacher_default_password}</code></li>
+                                <li>Students: <code>{createdSchool.student_default_password}</code></li>
+                            </ul>
+                        </div>
+                    )}
+
                     <button
                         onClick={() => {
                             const msg = `Assalam-o-Alaikum!\n\nAapka School ERP account ready hai:\n\n🔗 URL: ${createdSchool.login_url}\n📧 Email: ${createdSchool.admin_email}\n🔑 Password: ${createdSchool.admin_password}\n\nLogin karke apna dashboard use karein.\n\nShukriya,\nSchool ERP Team`;
                             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                         }}
-                        style={{ padding: '12px 24px', fontSize: '14px', fontWeight: '600', color: 'white', background: '#25D366', border: 'none', borderRadius: '10px', cursor: 'pointer', width: '100%' }}
+                        style={{ marginTop: '20px', padding: '12px 24px', fontSize: '14px', fontWeight: '600', color: 'white', background: '#25D366', border: 'none', borderRadius: '10px', cursor: 'pointer', width: '100%' }}
                     >
                         📱 WhatsApp Pe Bhejo
                     </button>
@@ -269,7 +369,7 @@ const SuperAdminSchools = () => {
             </div>
 
             {message.text && (
-                <div style={{ padding: '14px 20px', borderRadius: '10px', marginBottom: '20px', backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7', color: message.type === 'success' ? '#22543d' : '#c53030' }}>
+                <div style={{ padding: '14px 20px', borderRadius: '10px', marginBottom: '20px', backgroundColor: message.type === 'success' ? '#c6f6d5' : message.type === 'error' ? '#fed7d7' : '#bee3f8', color: message.type === 'success' ? '#22543d' : message.type === 'error' ? '#c53030' : '#2c5282' }}>
                     {message.text}
                 </div>
             )}
@@ -288,49 +388,171 @@ const SuperAdminSchools = () => {
                     {showForm && (
                         <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                             <h3 style={{ marginTop: 0, color: '#1a202c' }}>
-                                {editingId ? 'Edit School' : 'Add New School + Admin'}
+                                {editingId ? 'Edit School' : 'Add New School'}
                             </h3>
-                            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>School Name *</label>
-                                    <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., DPS Lahore" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subdomain *</label>
-                                    <input type="text" value={form.subdomain} onChange={(e) => setForm({ ...form, subdomain: e.target.value.toLowerCase().replace(/\s/g, '-') })} placeholder="e.g., dps-lahore" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                                </div>
 
-                                {!editingId && (
-                                    <>
+                            {/* Mode Toggle */}
+                            {!editingId && (
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: '#f7fafc', padding: '4px', borderRadius: '10px', width: 'fit-content' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSetupMode('manual')}
+                                        style={{
+                                            padding: '8px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer',
+                                            background: setupMode === 'manual' ? '#667eea' : 'transparent',
+                                            color: setupMode === 'manual' ? 'white' : '#4a5568',
+                                        }}
+                                    >
+                                        📝 Manual
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSetupMode('full')}
+                                        style={{
+                                            padding: '8px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer',
+                                            background: setupMode === 'full' ? '#667eea' : 'transparent',
+                                            color: setupMode === 'full' ? 'white' : '#4a5568',
+                                        }}
+                                    >
+                                        🚀 Full Setup (1 Click)
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* MANUAL FORM */}
+                            {setupMode === 'manual' && (
+                                <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>School Name *</label>
+                                        <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., DPS Lahore" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subdomain *</label>
+                                        <input
+                                            type="text"
+                                            value={form.subdomain}
+                                            onChange={(e) => setForm({ ...form, subdomain: cleanSubdomain(e.target.value) })}
+                                            placeholder="e.g., dps-lahore"
+                                            style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                            required
+                                        />
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#a0aec0' }}>
+                                            Sirf lowercase letters, numbers, aur hyphens. Dots nahi.
+                                        </p>
+                                    </div>
+
+                                    {!editingId && (
+                                        <>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Name *</label>
+                                                <input type="text" value={form.admin_name} onChange={(e) => setForm({ ...form, admin_name: e.target.value })} placeholder="e.g., Ali Khan" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required={!editingId} />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Password *</label>
+                                                <input type="text" value={form.admin_password} onChange={(e) => setForm({ ...form, admin_password: e.target.value })} placeholder="Min 8 chars" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required={!editingId} minLength={8} />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Email *</label>
+                                        <input type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@dps.com" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone</label>
+                                        <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+92-XXX-XXXXXXX" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                    </div>
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Address</label>
+                                        <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Full address" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                    </div>
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <button type="submit" style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                                            {editingId ? '💾 Update School' : '💾 Create School + Admin'}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {/* FULL SETUP FORM */}
+                            {setupMode === 'full' && !editingId && (
+                                <div>
+                                    <div style={{
+                                        backgroundColor: '#e6fffa', border: '1px solid #81e6d9', borderRadius: '8px',
+                                        padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#285e61',
+                                    }}>
+                                        🚀 <strong>Full Setup:</strong> 1 click pe school + admin + teachers + students + classes sab ban jayenge!
+                                    </div>
+
+                                    <form onSubmit={handleFullSetup} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>School Name *</label>
+                                            <input type="text" value={fullForm.name} onChange={(e) => setFullForm({ ...fullForm, name: e.target.value })} placeholder="e.g., DPS Lahore" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subdomain *</label>
+                                            <input
+                                                type="text"
+                                                value={fullForm.subdomain}
+                                                onChange={(e) => setFullForm({ ...fullForm, subdomain: cleanSubdomain(e.target.value) })}
+                                                placeholder="e.g., dps-lahore"
+                                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                                required
+                                            />
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#a0aec0' }}>Sirf lowercase, numbers, hyphens</p>
+                                        </div>
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Name *</label>
-                                            <input type="text" value={form.admin_name} onChange={(e) => setForm({ ...form, admin_name: e.target.value })} placeholder="e.g., Ali Khan" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required={!editingId} />
+                                            <input type="text" value={fullForm.admin_name} onChange={(e) => setFullForm({ ...fullForm, admin_name: e.target.value })} placeholder="e.g., Ali Khan" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Email *</label>
+                                            <input type="email" value={fullForm.admin_email} onChange={(e) => setFullForm({ ...fullForm, admin_email: e.target.value })} placeholder="admin@dps.com" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Password *</label>
-                                            <input type="text" value={form.admin_password} onChange={(e) => setForm({ ...form, admin_password: e.target.value })} placeholder="Min 8 chars" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required={!editingId} minLength={8} />
+                                            <input type="text" value={fullForm.admin_password} onChange={(e) => setFullForm({ ...fullForm, admin_password: e.target.value })} placeholder="Min 8 chars" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required minLength={8} />
                                         </div>
-                                    </>
-                                )}
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone</label>
+                                            <input type="text" value={fullForm.phone} onChange={(e) => setFullForm({ ...fullForm, phone: e.target.value })} placeholder="+92-XXX-XXXXXXX" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                        </div>
 
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Admin Email *</label>
-                                    <input type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@dps.com" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                        <div style={{ gridColumn: '1 / -1', marginTop: '12px' }}>
+                                            <h4 style={{ color: '#1a202c', marginBottom: '12px' }}>🚀 Auto-Generate (1 Click Setup)</h4>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Classes</label>
+                                                    <input type="number" value={fullForm.num_classes} onChange={(e) => setFullForm({ ...fullForm, num_classes: parseInt(e.target.value) || 10 })} min={1} max={20} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Sections/Class</label>
+                                                    <input type="number" value={fullForm.num_sections} onChange={(e) => setFullForm({ ...fullForm, num_sections: parseInt(e.target.value) || 3 })} min={1} max={5} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Teachers</label>
+                                                    <input type="number" value={fullForm.num_teachers} onChange={(e) => setFullForm({ ...fullForm, num_teachers: parseInt(e.target.value) || 30 })} min={1} max={100} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Students</label>
+                                                    <input type="number" value={fullForm.num_students} onChange={(e) => setFullForm({ ...fullForm, num_students: parseInt(e.target.value) || 100 })} min={1} max={1000} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ gridColumn: '1 / -1' }}>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Address</label>
+                                            <input type="text" value={fullForm.address} onChange={(e) => setFullForm({ ...fullForm, address: e.target.value })} placeholder="Full address" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                                        </div>
+
+                                        <div style={{ gridColumn: '1 / -1' }}>
+                                            <button type="submit" style={{ padding: '16px 48px', fontSize: '16px', fontWeight: '600', color: 'white', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)' }}>
+                                                🚀 Create School (1 Click Setup)
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone</label>
-                                    <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+92-XXX-XXXXXXX" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
-                                </div>
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Address</label>
-                                    <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Full address" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
-                                </div>
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <button type="submit" style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
-                                        {editingId ? '💾 Update School' : '💾 Create School + Admin'}
-                                    </button>
-                                </div>
-                            </form>
+                            )}
                         </div>
                     )}
 
@@ -359,7 +581,7 @@ const SuperAdminSchools = () => {
                                         <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                             <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
                                             <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>{s.name}</td>
-                                            <td style={{ padding: '16px 24px', color: '#718096' }}>{s.subdomain || '—'}</td>
+                                            <td style={{ padding: '16px 24px', color: '#718096', fontFamily: 'monospace' }}>{s.subdomain || '—'}</td>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <span style={{ padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: s.subscription_plan === 'trial' ? '#fefcbf' : '#c6f6d5', color: s.subscription_plan === 'trial' ? '#744210' : '#22543d' }}>
                                                     {s.subscription_plan}
