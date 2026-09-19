@@ -21,9 +21,12 @@ const SuperAdminSchools = () => {
         admin_password: '',
         phone: '',
         address: '',
-        whatsapp_number: '',      // ✅ NEW
-        whatsapp_api_key: '',     // ✅ NEW
-        whatsapp_phone_id: '',    // ✅ NEW
+        whatsapp_provider: '',      // ✅ NAYA
+        whatsapp_number: '',
+        whatsapp_account_sid: '',   // ✅ NAYA
+        whatsapp_auth_token: '',    // ✅ NAYA
+        whatsapp_api_key: '',
+        whatsapp_phone_id: '',
     });
 
     const [fullForm, setFullForm] = useState({
@@ -84,18 +87,24 @@ const SuperAdminSchools = () => {
                     admin_email: form.admin_email,
                     phone: form.phone,
                     address: form.address,
+                    whatsapp_provider: form.whatsapp_provider || null,
+                    whatsapp_number: form.whatsapp_number || null,
+                    whatsapp_account_sid: form.whatsapp_account_sid || null,
+                    whatsapp_auth_token: form.whatsapp_auth_token || null,
+                    whatsapp_api_key: form.whatsapp_api_key || null,
+                    whatsapp_phone_id: form.whatsapp_phone_id || null,
                 });
                 setMessage({ type: 'success', text: 'School updated! ✅' });
                 setShowForm(false);
                 setEditingId(null);
-                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_number: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
+                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_provider: '', whatsapp_number: '', whatsapp_account_sid: '', whatsapp_auth_token: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
                 fetchAll();
             } else {
                 const res = await api.post('/schools/with-admin', form);
                 setCreatedSchool(res.data);
                 setMessage({ type: 'success', text: 'School created! ✅' });
                 setShowForm(false);
-                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_number: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
+                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_provider: '', whatsapp_number: '', whatsapp_account_sid: '', whatsapp_auth_token: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
                 fetchAll();
             }
             setTimeout(() => setMessage({ type: '', text: '' }), 5000);
@@ -139,7 +148,10 @@ const SuperAdminSchools = () => {
             admin_password: '',
             phone: school.phone || '',
             address: school.address || '',
+            whatsapp_provider: school.whatsapp_provider || '',
             whatsapp_number: school.whatsapp_number || '',
+            whatsapp_account_sid: school.whatsapp_account_sid || '',
+            whatsapp_auth_token: '',
             whatsapp_api_key: '',
             whatsapp_phone_id: school.whatsapp_phone_id || '',
         });
@@ -162,7 +174,7 @@ const SuperAdminSchools = () => {
     };
 
     const handleCancel = () => {
-        setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_number: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
+        setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_provider: '', whatsapp_number: '', whatsapp_account_sid: '', whatsapp_auth_token: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
         setFullForm({
             name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '',
             phone: '', address: '', num_classes: 10, num_sections: 3, num_teachers: 30, num_students: 100,
@@ -257,27 +269,6 @@ const SuperAdminSchools = () => {
                     <h3 style={{ marginTop: 0, color: '#22543d' }}>✅ School Created Successfully!</h3>
                     <p style={{ color: '#718096', marginBottom: '20px' }}>Ye credentials school admin ko bhejo:</p>
 
-                    {createdSchool.isFullSetup && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', backgroundColor: '#f0fff4', borderRadius: '10px' }}>
-                            <div>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>👨‍🏫 Teachers</p>
-                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_teachers}</p>
-                            </div>
-                            <div>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>👨‍🎓 Students</p>
-                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_students}</p>
-                            </div>
-                            <div>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>🏫 Classes</p>
-                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_classes}</p>
-                            </div>
-                            <div>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#718096' }}>📚 Sections</p>
-                                <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 'bold', color: '#22543d' }}>{createdSchool.total_sections}</p>
-                            </div>
-                        </div>
-                    )}
-
                     <div style={{ marginBottom: '16px' }}>
                         <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#4a5568', marginBottom: '4px' }}>🔗 LOGIN URL</label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -297,26 +288,6 @@ const SuperAdminSchools = () => {
                             <code style={{ fontSize: '14px', color: '#2d3748' }}>{createdSchool.admin_password}</code>
                         </div>
                     </div>
-
-                    {createdSchool.isFullSetup && (
-                        <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#fefcbf', borderRadius: '10px', fontSize: '13px', color: '#744210' }}>
-                            <strong>📌 Default Passwords:</strong>
-                            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                                <li>Teachers: <code>{createdSchool.teacher_default_password}</code></li>
-                                <li>Students: <code>{createdSchool.student_default_password}</code></li>
-                            </ul>
-                        </div>
-                    )}
-
-                    <button
-                        onClick={() => {
-                            const msg = `Assalam-o-Alaikum!\n\nAapka School ERP account ready hai:\n\n🔗 URL: ${createdSchool.login_url}\n📧 Email: ${createdSchool.admin_email}\n🔑 Password: ${createdSchool.admin_password}\n\nLogin karke apna dashboard use karein.\n\nShukriya,\nSchool ERP Team`;
-                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                        }}
-                        style={{ marginTop: '20px', padding: '12px 24px', fontSize: '14px', fontWeight: '600', color: 'white', background: '#25D366', border: 'none', borderRadius: '10px', cursor: 'pointer', width: '100%' }}
-                    >
-                        📱 WhatsApp Pe Bhejo
-                    </button>
 
                     <button onClick={() => setCreatedSchool(null)} style={{ marginTop: '12px', padding: '8px 16px', fontSize: '13px', color: '#718096', background: 'transparent', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', width: '100%' }}>Close</button>
                 </div>
@@ -347,20 +318,8 @@ const SuperAdminSchools = () => {
 
                             {!editingId && (
                                 <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: '#f7fafc', padding: '4px', borderRadius: '10px', width: 'fit-content' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSetupMode('manual')}
-                                        style={{ padding: '8px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer', background: setupMode === 'manual' ? '#667eea' : 'transparent', color: setupMode === 'manual' ? 'white' : '#4a5568' }}
-                                    >
-                                        📝 Manual
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSetupMode('full')}
-                                        style={{ padding: '8px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer', background: setupMode === 'full' ? '#667eea' : 'transparent', color: setupMode === 'full' ? 'white' : '#4a5568' }}
-                                    >
-                                        🚀 Full Setup (1 Click)
-                                    </button>
+                                    <button type="button" onClick={() => setSetupMode('manual')} style={{ padding: '8px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer', background: setupMode === 'manual' ? '#667eea' : 'transparent', color: setupMode === 'manual' ? 'white' : '#4a5568' }}>📝 Manual</button>
+                                    <button type="button" onClick={() => setSetupMode('full')} style={{ padding: '8px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer', background: setupMode === 'full' ? '#667eea' : 'transparent', color: setupMode === 'full' ? 'white' : '#4a5568' }}>🚀 Full Setup (1 Click)</button>
                                 </div>
                             )}
 
@@ -399,34 +358,60 @@ const SuperAdminSchools = () => {
                                         <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} style={inputStyle} />
                                     </div>
 
-                                    {/* ✅ WhatsApp Configuration */}
+                                    {/* ✅ WhatsApp Configuration — Multi-Provider */}
                                     <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '16px', backgroundColor: '#f0fff4', borderRadius: '10px', border: '1px solid #9ae6b4' }}>
                                         <h4 style={{ margin: '0 0 16px 0', color: '#22543d' }}>📱 WhatsApp Configuration (Optional)</h4>
+                                        
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                            <div>
+                                                <label style={labelStyle}>WhatsApp Provider</label>
+                                                <select value={form.whatsapp_provider || ''} onChange={(e) => setForm({ ...form, whatsapp_provider: e.target.value })} style={inputStyle}>
+                                                    <option value="">Select Provider</option>
+                                                    <option value="twilio">Twilio</option>
+                                                    <option value="wab2c">WAB2C</option>
+                                                    <option value="meta">Meta Cloud API</option>
+                                                </select>
+                                            </div>
                                             <div>
                                                 <label style={labelStyle}>WhatsApp Number</label>
                                                 <input type="text" value={form.whatsapp_number || ''} onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })} placeholder="+92 300 1234567" style={inputStyle} />
                                             </div>
-                                            <div>
-                                                <label style={labelStyle}>Phone Number ID</label>
-                                                <input type="text" value={form.whatsapp_phone_id || ''} onChange={(e) => setForm({ ...form, whatsapp_phone_id: e.target.value })} placeholder="112083396448143" style={inputStyle} />
+                                        </div>
+
+                                        {form.whatsapp_provider === 'twilio' && (
+                                            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                                <div>
+                                                    <label style={labelStyle}>Twilio Account SID</label>
+                                                    <input type="text" value={form.whatsapp_account_sid || ''} onChange={(e) => setForm({ ...form, whatsapp_account_sid: e.target.value })} placeholder="ACxxxx..." style={inputStyle} />
+                                                </div>
+                                                <div>
+                                                    <label style={labelStyle}>Twilio Auth Token</label>
+                                                    <input type="text" value={form.whatsapp_auth_token || ''} onChange={(e) => setForm({ ...form, whatsapp_auth_token: e.target.value })} placeholder="xxxx..." style={inputStyle} />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div style={{ marginTop: '16px' }}>
-                                            <label style={labelStyle}>Cloud API Key (Access Token)</label>
-                                            <textarea value={form.whatsapp_api_key || ''} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="EAAxxxxx..." rows={3} style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '12px' }} />
-                                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#718096' }}>
-                                                Meta Business Suite → WhatsApp → API Setup se copy karo
-                                            </p>
-                                        </div>
+                                        )}
+
+                                        {form.whatsapp_provider === 'wab2c' && (
+                                            <div style={{ marginTop: '16px' }}>
+                                                <label style={labelStyle}>WAB2C API Key</label>
+                                                <input type="text" value={form.whatsapp_api_key || ''} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="wab2c_xxxx..." style={inputStyle} />
+                                            </div>
+                                        )}
+
+                                        {form.whatsapp_provider === 'meta' && (
+                                            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                                <div>
+                                                    <label style={labelStyle}>Meta Access Token</label>
+                                                    <input type="text" value={form.whatsapp_api_key || ''} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="EAAxxxx..." style={inputStyle} />
+                                                </div>
+                                                <div>
+                                                    <label style={labelStyle}>Phone Number ID</label>
+                                                    <input type="text" value={form.whatsapp_phone_id || ''} onChange={(e) => setForm({ ...form, whatsapp_phone_id: e.target.value })} placeholder="112083..." style={inputStyle} />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {editingId && (
-                                        <div style={{ gridColumn: '1 / -1' }}>
-                                            <label style={labelStyle}>🔑 New Admin Password (Optional — Change Password)</label>
-                                            <input type="text" value={form.new_admin_password || ''} onChange={(e) => setForm({ ...form, new_admin_password: e.target.value })} placeholder="Khaali chhodo to password change nahi hoga" style={inputStyle} />
-                                        </div>
-                                    )}
                                     <div style={{ gridColumn: '1 / -1' }}>
                                         <button type="submit" style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
                                             {editingId ? '💾 Update School' : '💾 Create School + Admin'}
@@ -440,7 +425,6 @@ const SuperAdminSchools = () => {
                                     <div style={{ backgroundColor: '#e6fffa', border: '1px solid #81e6d9', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#285e61' }}>
                                         🚀 <strong>Full Setup:</strong> 1 click pe school + admin + teachers + students + classes sab ban jayenge!
                                     </div>
-
                                     <form onSubmit={handleFullSetup} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                                         <div>
                                             <label style={labelStyle}>School Name *</label>
@@ -466,7 +450,6 @@ const SuperAdminSchools = () => {
                                             <label style={labelStyle}>Phone</label>
                                             <input type="text" value={fullForm.phone} onChange={(e) => setFullForm({ ...fullForm, phone: e.target.value })} style={inputStyle} />
                                         </div>
-
                                         <div style={{ gridColumn: '1 / -1', marginTop: '12px' }}>
                                             <h4 style={{ color: '#1a202c', marginBottom: '12px' }}>🚀 Auto-Generate</h4>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
@@ -488,12 +471,10 @@ const SuperAdminSchools = () => {
                                                 </div>
                                             </div>
                                         </div>
-
                                         <div style={{ gridColumn: '1 / -1' }}>
                                             <label style={labelStyle}>Address</label>
                                             <input type="text" value={fullForm.address} onChange={(e) => setFullForm({ ...fullForm, address: e.target.value })} style={inputStyle} />
                                         </div>
-
                                         <div style={{ gridColumn: '1 / -1' }}>
                                             <button type="submit" style={{ padding: '16px 48px', fontSize: '16px', fontWeight: '600', color: 'white', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)' }}>
                                                 🚀 Create School (1 Click Setup)
