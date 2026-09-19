@@ -21,6 +21,8 @@ const Students = () => {
         class_id: '',
         section_id: '',
         phone: '',
+        parent_whatsapp: '',    // ✅ NAYA
+        parent_name: '',        // ✅ NAYA
     });
 
     useEffect(() => {
@@ -127,7 +129,6 @@ const Students = () => {
 
         try {
             if (editingId) {
-                // ✅ Edit — full_name, email, phone, password sab update
                 await api.put(`/students/${editingId}`, {
                     user_id: 1,
                     roll_number: form.roll_number,
@@ -137,10 +138,11 @@ const Students = () => {
                     email: form.email,
                     phone: form.phone || null,
                     password: form.password || null,
+                    parent_whatsapp: form.parent_whatsapp || null,   // ✅ NAYA
+                    parent_name: form.parent_name || null,           // ✅ NAYA
                 });
                 setMessage({ type: 'success', text: 'Student updated! ✅' });
             } else {
-                // ✅ Naya endpoint — user + student ek saath
                 await api.post('/students/create-with-user', {
                     full_name: form.full_name,
                     email: form.email,
@@ -149,12 +151,15 @@ const Students = () => {
                     class_id: parseInt(form.class_id),
                     section_id: parseInt(form.section_id),
                     phone: form.phone || null,
+                    parent_whatsapp: form.parent_whatsapp || null,   // ✅ NAYA
+                    parent_name: form.parent_name || null,           // ✅ NAYA
                 });
                 setMessage({ type: 'success', text: 'Student created! ✅' });
             }
             setForm({
                 full_name: '', email: '', password: '',
                 roll_number: '', class_id: '', section_id: '', phone: '',
+                parent_whatsapp: '', parent_name: '',
             });
             setEditingId(null);
             setShowForm(false);
@@ -179,6 +184,8 @@ const Students = () => {
             class_id: student.class_id,
             section_id: student.section_id,
             phone: student.student_phone || '',
+            parent_whatsapp: student.parent_whatsapp || '',   // ✅ NAYA
+            parent_name: student.parent_name || '',           // ✅ NAYA
         });
         setEditingId(student.id);
         setShowForm(true);
@@ -201,6 +208,7 @@ const Students = () => {
         setForm({
             full_name: '', email: '', password: '',
             roll_number: '', class_id: '', section_id: '', phone: '',
+            parent_whatsapp: '', parent_name: '',
         });
         setEditingId(null);
         setShowForm(false);
@@ -217,14 +225,9 @@ const Students = () => {
                     <button
                         onClick={handleExport}
                         style={{
-                            padding: '12px 24px',
-                            fontSize: '15px',
-                            fontWeight: '600',
-                            color: 'white',
+                            padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white',
                             background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
-                            border: 'none',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
+                            border: 'none', borderRadius: '10px', cursor: 'pointer',
                         }}
                     >
                         📥 Export Excel
@@ -232,14 +235,9 @@ const Students = () => {
                     <button
                         onClick={() => showForm ? handleCancel() : setShowForm(true)}
                         style={{
-                            padding: '12px 24px',
-                            fontSize: '15px',
-                            fontWeight: '600',
-                            color: 'white',
+                            padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white',
                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            border: 'none',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
+                            border: 'none', borderRadius: '10px', cursor: 'pointer',
                         }}
                     >
                         {showForm ? '✕ Cancel' : '+ Add Student'}
@@ -249,9 +247,7 @@ const Students = () => {
 
             {message.text && (
                 <div style={{
-                    padding: '14px 20px',
-                    borderRadius: '10px',
-                    marginBottom: '20px',
+                    padding: '14px 20px', borderRadius: '10px', marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : message.type === 'error' ? '#fed7d7' : '#bee3f8',
                     color: message.type === 'success' ? '#22543d' : message.type === 'error' ? '#c53030' : '#2c5282',
                 }}>
@@ -260,149 +256,92 @@ const Students = () => {
             )}
 
             {showForm && (
-                <div style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    marginBottom: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
                         {editingId ? '✏️ Edit Student' : '➕ Add New Student'}
                     </h3>
 
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                        {/* Full Name */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Full Name *</label>
-                            <input
-                                type="text"
-                                value={form.full_name}
-                                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                                placeholder="e.g., Ali Khan"
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                required
-                            />
+                            <input type="text" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="e.g., Ali Khan" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
                         </div>
 
-                        {/* Email */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Email *</label>
-                            <input
-                                type="email"
-                                value={form.email}
-                                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                placeholder="student@school.com"
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                required
-                            />
+                            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="student@school.com" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
                         </div>
 
-                        {/* Password */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
                                 Password {editingId ? '(Optional — Change Password)' : '*'}
                             </label>
-                            <input
-                                type="text"
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                placeholder={editingId ? "Khaali chhodo to change nahi hoga" : "Min 8 characters"}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                required={!editingId}
-                                minLength={8}
-                            />
+                            <input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editingId ? "Khaali chhodo to change nahi hoga" : "Min 8 characters"} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required={!editingId} minLength={8} />
                         </div>
 
-                        {/* Roll Number */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Roll Number *</label>
-                            <input
-                                type="text"
-                                value={form.roll_number}
-                                onChange={(e) => setForm({ ...form, roll_number: e.target.value })}
-                                placeholder="e.g., 101"
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                required
-                            />
+                            <input type="text" value={form.roll_number} onChange={(e) => setForm({ ...form, roll_number: e.target.value })} placeholder="e.g., 101" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
                         </div>
 
-                        {/* Class */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class *</label>
-                            <select
-                                value={form.class_id}
-                                onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '' })}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                required
-                            >
+                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
                                 <option value="">Select Class</option>
-                                {classes.map((c) => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
+                                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
 
-                        {/* Section */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Section *</label>
-                            <select
-                                value={form.section_id}
-                                onChange={(e) => setForm({ ...form, section_id: e.target.value })}
-                                disabled={!form.class_id}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
-                                required
-                            >
+                            <select value={form.section_id} onChange={(e) => setForm({ ...form, section_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
                                 <option value="">Select Section</option>
-                                {sections.map((s) => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
+                                {sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
 
-                        {/* Phone */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Phone (Optional)</label>
+                            <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g., +92-300-1234567" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+
+                        {/* ✅ Parent WhatsApp */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#22543d' }}>
+                                📱 Parent WhatsApp *
+                            </label>
                             <input
                                 type="text"
-                                value={form.phone}
-                                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                placeholder="e.g., +92-300-1234567"
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                value={form.parent_whatsapp}
+                                onChange={(e) => setForm({ ...form, parent_whatsapp: e.target.value })}
+                                placeholder="+92 300 1234567"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #9ae6b4', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#f0fff4' }}
+                                required
+                            />
+                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#718096' }}>
+                                Is number par teacher/admin message bhejenge
+                            </p>
+                        </div>
+
+                        {/* ✅ Parent Name */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#22543d' }}>
+                                👨‍👦 Parent Name
+                            </label>
+                            <input
+                                type="text"
+                                value={form.parent_name}
+                                onChange={(e) => setForm({ ...form, parent_name: e.target.value })}
+                                placeholder="e.g., Ali Khan Sr."
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #9ae6b4', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#f0fff4' }}
                             />
                         </div>
 
                         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                style={{
-                                    padding: '14px 32px',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    color: 'white',
-                                    background: loading ? '#a0aec0' : '#48bb78',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                }}
-                            >
+                            <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
                                 {loading ? 'Saving...' : (editingId ? '💾 Update Student' : '💾 Save Student')}
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                style={{
-                                    padding: '14px 32px',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    color: '#4a5568',
-                                    background: '#e2e8f0',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    cursor: 'pointer',
-                                }}
-                            >
+                            <button type="button" onClick={handleCancel} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: '#4a5568', background: '#e2e8f0', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
                                 ✕ Cancel
                             </button>
                         </div>
@@ -411,40 +350,16 @@ const Students = () => {
             )}
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔍 Filter Students by Class
-                </label>
-                <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
-                >
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔍 Filter Students by Class</label>
+                <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}>
                     <option value="">-- All Students --</option>
-                    {classes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
+                    {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
             </div>
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔎 Search Students
-                </label>
-                <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name, roll number, ID, user ID..."
-                    style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        fontSize: '15px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '10px',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                    }}
-                />
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔎 Search Students</label>
+                <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, roll number, ID, user ID..." style={{ width: '100%', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
@@ -455,9 +370,7 @@ const Students = () => {
                 {filteredStudents.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
-                        <p style={{ color: '#718096' }}>
-                            {searchTerm ? 'No students match your search' : 'No students yet'}
-                        </p>
+                        <p style={{ color: '#718096' }}>{searchTerm ? 'No students match your search' : 'No students yet'}</p>
                     </div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
@@ -469,6 +382,7 @@ const Students = () => {
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Section</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Parent WhatsApp</th>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                                 </tr>
                             </thead>
@@ -476,32 +390,18 @@ const Students = () => {
                                 {filteredStudents.map((s) => (
                                     <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                         <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
-                                        <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>
-                                            {s.student_name || `Student #${s.user_id}`}
-                                        </td>
+                                        <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>{s.student_name || `Student #${s.user_id}`}</td>
                                         <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600', fontFamily: 'monospace' }}>{s.roll_number || '—'}</td>
                                         <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
                                         <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id || '—'}</td>
+                                        <td style={{ padding: '16px 24px', color: '#22543d', fontWeight: '600', fontFamily: 'monospace' }}>
+                                            {s.parent_whatsapp || '—'}
+                                        </td>
                                         <td style={{ padding: '16px 24px' }}>
                                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                <button
-                                                    onClick={() => handleEdit(s)}
-                                                    style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#667eea', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                                                >
-                                                    ✏️ Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDownloadPDF(s.id)}
-                                                    style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                                                >
-                                                    📄 Report Card
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(s.id)}
-                                                    style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                                                >
-                                                    🗑️ Delete
-                                                </button>
+                                                <button onClick={() => handleEdit(s)} style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#667eea', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✏️ Edit</button>
+                                                <button onClick={() => handleDownloadPDF(s.id)} style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#48bb78', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📄 Report Card</button>
+                                                <button onClick={() => handleDelete(s.id)} style={{ padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>🗑️ Delete</button>
                                             </div>
                                         </td>
                                     </tr>
