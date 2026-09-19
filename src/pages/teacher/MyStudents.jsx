@@ -3,6 +3,7 @@ import api from '../../api/axios';
 
 const MyStudents = () => {
     const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [loading, setLoading] = useState(true);
@@ -10,6 +11,7 @@ const MyStudents = () => {
 
     useEffect(() => {
         fetchClasses();
+        fetchSections();
     }, []);
 
     useEffect(() => {
@@ -28,6 +30,17 @@ const MyStudents = () => {
         }
     };
 
+    const fetchSections = async () => {
+        try {
+            // Saare sections laao (har class ke liye)
+            const res = await api.get('/sections/');
+            setSections(res.data);
+        } catch (err) {
+            console.error('Sections fetch failed:', err);
+            setSections([]);
+        }
+    };
+
     const fetchStudents = async (classId) => {
         try {
             const res = await api.get(`/students/${classId}`);
@@ -35,6 +48,18 @@ const MyStudents = () => {
         } catch (err) {
             setStudents([]);
         }
+    };
+
+    // ✅ Class name dhundo
+    const getClassName = (classId) => {
+        const cls = classes.find(c => String(c.id) === String(classId));
+        return cls ? cls.name : `Class #${classId}`;
+    };
+
+    // ✅ Section name dhundo
+    const getSectionName = (sectionId) => {
+        const sec = sections.find(s => String(s.id) === String(sectionId));
+        return sec ? sec.name : `Section #${sectionId}`;
     };
 
     const filtered = students.filter((s) =>
@@ -139,8 +164,8 @@ const MyStudents = () => {
                                 <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
                                     <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.roll_number}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.class_id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getSectionName(s.section_id)}</td>
                                 </tr>
                             ))}
                         </tbody>
