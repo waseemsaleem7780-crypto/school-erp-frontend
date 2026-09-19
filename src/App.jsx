@@ -30,6 +30,7 @@ import Concession from './pages/admin/Concession';
 import AcademicYears from './pages/admin/AcademicYears';
 import SchoolSettings from './pages/admin/SchoolSettings';
 import Analytics from './pages/admin/Analytics';
+import Broadcast from './pages/admin/Broadcast';  // ✅ NEW
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -42,6 +43,7 @@ import MarksEntry from './pages/teacher/MarksEntry';
 import TeacherTimetable from './pages/teacher/Timetable';
 import TeacherStudyMaterial from './pages/teacher/StudyMaterial';
 import TeacherNoticeBoard from './pages/teacher/NoticeBoard';
+import TeacherMessageParent from './pages/teacher/MessageParent';  // ✅ NEW
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -94,6 +96,7 @@ function App() {
                             <Route path="/:schoolSlug/admin/academic-years" element={<AcademicYears />} />
                             <Route path="/:schoolSlug/admin/settings" element={<SchoolSettings />} />
                             <Route path="/:schoolSlug/admin/analytics" element={<Analytics />} />
+                            <Route path="/:schoolSlug/admin/broadcast" element={<Broadcast />} />  {/* ✅ NEW */}
                         </Route>
                     </Route>
 
@@ -120,6 +123,7 @@ function App() {
                             <Route path="/admin/academic-years" element={<AcademicYears />} />
                             <Route path="/admin/settings" element={<SchoolSettings />} />
                             <Route path="/admin/analytics" element={<Analytics />} />
+                            <Route path="/admin/broadcast" element={<Broadcast />} />  {/* ✅ NEW */}
                         </Route>
                     </Route>
 
@@ -136,6 +140,7 @@ function App() {
                             <Route path="/teacher/timetable" element={<TeacherTimetable />} />
                             <Route path="/teacher/study-material" element={<TeacherStudyMaterial />} />
                             <Route path="/teacher/notice-board" element={<TeacherNoticeBoard />} />
+                            <Route path="/teacher/message-parent" element={<TeacherMessageParent />} />  {/* ✅ NEW */}
                         </Route>
                     </Route>
 
@@ -152,6 +157,7 @@ function App() {
                             <Route path="/:schoolSlug/teacher/timetable" element={<TeacherTimetable />} />
                             <Route path="/:schoolSlug/teacher/study-material" element={<TeacherStudyMaterial />} />
                             <Route path="/:schoolSlug/teacher/notice-board" element={<TeacherNoticeBoard />} />
+                            <Route path="/:schoolSlug/teacher/message-parent" element={<TeacherMessageParent />} />  {/* ✅ NEW */}
                         </Route>
                     </Route>
 
