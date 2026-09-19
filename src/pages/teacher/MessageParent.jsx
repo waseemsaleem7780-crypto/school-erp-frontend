@@ -3,10 +3,13 @@ import api from '../../api/axios';
 
 const MessageParent = () => {
     const [classes, setClasses] = useState([]);
+    const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
+    const [selectedSection, setSelectedSection] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [parentPhone, setParentPhone] = useState('');
+    const [parentName, setParentName] = useState('');
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
 
@@ -23,12 +26,31 @@ const MessageParent = () => {
         }
     };
 
-    const handleClassChange = async (classId) => {
+    const handleClassChange = (classId) => {
         setSelectedClass(classId);
+        setSelectedSection('');
         setSelectedStudent(null);
         setParentPhone('');
+        setParentName('');
+        setStudents([]);
+
+        const filteredSections = classes
+            .filter(c => String(c.class_id) === String(classId))
+            .map(c => ({ id: c.section_id, name: c.section_name }))
+            .filter(s => s.id);
+
+        const uniqueSections = [...new Map(filteredSections.map(s => [s.id, s])).values()];
+        setSections(uniqueSections);
+    };
+
+    const handleSectionChange = async (sectionId) => {
+        setSelectedSection(sectionId);
+        setSelectedStudent(null);
+        setParentPhone('');
+        setParentName('');
+
         try {
-            const res = await api.get(`/teacher-message/students/${classId}`);
+            const res = await api.get(`/teacher-message/students/${selectedClass}?section_id=${sectionId}`);
             setStudents(res.data);
         } catch (err) {
             setStudents([]);
@@ -39,12 +61,13 @@ const MessageParent = () => {
         const student = students.find(s => String(s.id) === String(studentId));
         setSelectedStudent(student);
         setParentPhone(student?.parent_phone || '');
+        setParentName(student?.parent_name || '');
     };
 
     const handleSend = async (e) => {
         e.preventDefault();
         if (!selectedStudent) return;
-        if (!window.confirm(`Send to ${selectedStudent.parent_name}?`)) return;
+        if (!window.confirm(`Send to ${parentName || 'parent'}?`)) return;
 
         setSending(true);
         try {
@@ -62,14 +85,14 @@ const MessageParent = () => {
     };
 
     const inputStyle = {
-        width: '100%',
-        padding: '12px',
-        fontSize: '14px',
-        border: '2px solid #e2e8f0',
-        borderRadius: '8px',
-        outline: 'none',
-        boxSizing: 'border-box',
-        marginBottom: '16px'
+        width: '100%', padding: '12px', fontSize: '14px',
+        border: '2px solid #e2e8f0', borderRadius: '8px',
+        outline: 'none', boxSizing: 'border-box', marginBottom: '16px',
+    };
+
+    const labelStyle = {
+        display: 'block', marginBottom: '6px',
+        fontSize: '13px', fontWeight: '600', color: '#4a5568',
     };
 
     return (
@@ -79,19 +102,29 @@ const MessageParent = () => {
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', maxWidth: '700px' }}>
                 <form onSubmit={handleSend}>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class (Your Assigned)</label>
+                    <label style={labelStyle}>Class (Your Assigned)</label>
                     <select value={selectedClass} onChange={(e) => handleClassChange(e.target.value)} style={inputStyle} required>
                         <option value="">Select Class</option>
                         {classes.map((c, i) => (
-                            <option key={i} value={c.class_id}>
-                                {c.class_name} {c.section_name ? `- ${c.section_name}` : ''}
-                            </option>
+                            <option key={i} value={c.class_id}>{c.class_name}</option>
                         ))}
                     </select>
 
-                    {selectedClass && (
+                    {selectedClass && sections.length > 0 && (
                         <>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
+                            <label style={labelStyle}>Section</label>
+                            <select value={selectedSection} onChange={(e) => handleSectionChange(e.target.value)} style={inputStyle} required>
+                                <option value="">Select Section</option>
+                                {sections.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                        </>
+                    )}
+
+                    {selectedSection && students.length > 0 && (
+                        <>
+                            <label style={labelStyle}>Student (Roll No)</label>
                             <select onChange={(e) => handleStudentChange(e.target.value)} style={inputStyle} required>
                                 <option value="">Select Student</option>
                                 {students.map(s => (
@@ -103,17 +136,17 @@ const MessageParent = () => {
 
                     {parentPhone && (
                         <>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Parent WhatsApp</label>
-                            <input type="text" value={parentPhone} readOnly style={{ ...inputStyle, backgroundColor: '#f7fafc' }} />
+                            <label style={labelStyle}>Parent WhatsApp (Auto-filled)</label>
+                            <input type="text" value={parentPhone} readOnly style={{ ...inputStyle, backgroundColor: '#f0fff4', borderColor: '#9ae6b4', fontWeight: '600', color: '#22543d' }} />
                             <p style={{ fontSize: '12px', color: '#718096', marginTop: '-8px' }}>
-                                Parent: {selectedStudent?.parent_name || 'N/A'}
+                                Parent: {parentName || 'N/A'}
                             </p>
                         </>
                     )}
 
                     {selectedStudent && (
                         <>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Message</label>
+                            <label style={labelStyle}>Message</label>
                             <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={6} placeholder="Assalam-o-Alaikum! ..." style={inputStyle} required />
                         </>
                     )}
