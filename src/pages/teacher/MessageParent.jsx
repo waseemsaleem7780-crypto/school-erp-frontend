@@ -10,13 +10,17 @@ const MessageParent = () => {
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
 
-    useEffect(() => { fetchMyClasses(); }, []);
+    useEffect(() => {
+        fetchMyClasses();
+    }, []);
 
     const fetchMyClasses = async () => {
         try {
             const res = await api.get('/teacher-message/my-classes');
             setClasses(res.data);
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const handleClassChange = async (classId) => {
@@ -26,7 +30,9 @@ const MessageParent = () => {
         try {
             const res = await api.get(`/teacher-message/students/${classId}`);
             setStudents(res.data);
-        } catch (err) { setStudents([]); }
+        } catch (err) {
+            setStudents([]);
+        }
     };
 
     const handleStudentChange = (studentId) => {
@@ -39,17 +45,32 @@ const MessageParent = () => {
         e.preventDefault();
         if (!selectedStudent) return;
         if (!window.confirm(`Send to ${selectedStudent.parent_name}?`)) return;
+
         setSending(true);
         try {
-            await api.post('/teacher-message/send', { student_id: selectedStudent.id, message });
+            await api.post('/teacher-message/send', {
+                student_id: selectedStudent.id,
+                message
+            });
             alert('✅ Message sent!');
             setMessage('');
         } catch (error) {
             alert('❌ Failed: ' + (error.response?.data?.detail || error.message));
-        } finally { setSending(false); }
+        } finally {
+            setSending(false);
+        }
     };
 
-    const inputStyle = { width: '100%', padding: '12px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', marginBottom: '16px' };
+    const inputStyle = {
+        width: '100%',
+        padding: '12px',
+        fontSize: '14px',
+        border: '2px solid #e2e8f0',
+        borderRadius: '8px',
+        outline: 'none',
+        boxSizing: 'border-box',
+        marginBottom: '16px'
+    };
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial' }}>
@@ -62,7 +83,9 @@ const MessageParent = () => {
                     <select value={selectedClass} onChange={(e) => handleClassChange(e.target.value)} style={inputStyle} required>
                         <option value="">Select Class</option>
                         {classes.map((c, i) => (
-                            <option key={i} value={c.class_id}>{c.class_name} {c.section_name ? `- ${c.section_name}` : ''}</option>
+                            <option key={i} value={c.class_id}>
+                                {c.class_name} {c.section_name ? `- ${c.section_name}` : ''}
+                            </option>
                         ))}
                     </select>
 
@@ -82,7 +105,9 @@ const MessageParent = () => {
                         <>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Parent WhatsApp</label>
                             <input type="text" value={parentPhone} readOnly style={{ ...inputStyle, backgroundColor: '#f7fafc' }} />
-                            <p style={{ fontSize: '12px', color: '#718096', marginTop: '-8px' }}>Parent: {selectedStudent?.parent_name || 'N/A'}</p>
+                            <p style={{ fontSize: '12px', color: '#718096', marginTop: '-8px' }}>
+                                Parent: {selectedStudent?.parent_name || 'N/A'}
+                            </p>
                         </>
                     )}
 

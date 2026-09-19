@@ -16,16 +16,13 @@ const Sidebar = () => {
         role = 'admin';
     }
 
-    // Agar URL mein schoolSlug hai to use karo (path se)
     if (!schoolSlug) {
         const pathParts = location.pathname.split('/').filter(Boolean);
-        // /test-school/admin/dashboard → ['test-school', 'admin', 'dashboard']
         if (pathParts.length >= 3 && !['superadmin', 'admin', 'teacher', 'student', 'login'].includes(pathParts[0])) {
             schoolSlug = pathParts[0];
         }
     }
 
-    // School slug prefix
     const prefix = schoolSlug ? `/${schoolSlug}` : '';
 
     const superAdminMenu = [
@@ -52,7 +49,8 @@ const Sidebar = () => {
         { name: 'Timetable', path: `${prefix}/admin/timetable` },
         { name: 'Academic Years', path: `${prefix}/admin/academic-years` },
         { name: 'School Settings', path: `${prefix}/admin/settings` },
-        { name: 'Analytics', path: `${prefix}/admin/analytics` }
+        { name: 'Analytics', path: `${prefix}/admin/analytics` },
+        { name: '📢 Broadcast', path: `${prefix}/admin/broadcast` },
     ];
 
     const teacherMenu = [
@@ -66,6 +64,7 @@ const Sidebar = () => {
         { name: 'Timetable', path: `${prefix}/teacher/timetable` },
         { name: 'Study Material', path: `${prefix}/teacher/study-material` },
         { name: 'Notice Board', path: `${prefix}/teacher/notice-board` },
+        { name: '💬 Message Parent', path: `${prefix}/teacher/message-parent` },
     ];
 
     const studentMenu = [
