@@ -21,6 +21,9 @@ const SuperAdminSchools = () => {
         admin_password: '',
         phone: '',
         address: '',
+        whatsapp_number: '',      // ✅ NEW
+        whatsapp_api_key: '',     // ✅ NEW
+        whatsapp_phone_id: '',    // ✅ NEW
     });
 
     const [fullForm, setFullForm] = useState({
@@ -85,14 +88,14 @@ const SuperAdminSchools = () => {
                 setMessage({ type: 'success', text: 'School updated! ✅' });
                 setShowForm(false);
                 setEditingId(null);
-                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '' });
+                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_number: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
                 fetchAll();
             } else {
                 const res = await api.post('/schools/with-admin', form);
                 setCreatedSchool(res.data);
                 setMessage({ type: 'success', text: 'School created! ✅' });
                 setShowForm(false);
-                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '' });
+                setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_number: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
                 fetchAll();
             }
             setTimeout(() => setMessage({ type: '', text: '' }), 5000);
@@ -136,6 +139,9 @@ const SuperAdminSchools = () => {
             admin_password: '',
             phone: school.phone || '',
             address: school.address || '',
+            whatsapp_number: school.whatsapp_number || '',
+            whatsapp_api_key: '',
+            whatsapp_phone_id: school.whatsapp_phone_id || '',
         });
         setEditingId(school.id);
         setShowForm(true);
@@ -156,7 +162,7 @@ const SuperAdminSchools = () => {
     };
 
     const handleCancel = () => {
-        setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '' });
+        setForm({ name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '', phone: '', address: '', whatsapp_number: '', whatsapp_api_key: '', whatsapp_phone_id: '' });
         setFullForm({
             name: '', subdomain: '', admin_name: '', admin_email: '', admin_password: '',
             phone: '', address: '', num_classes: 10, num_sections: 3, num_teachers: 30, num_students: 100,
@@ -392,6 +398,29 @@ const SuperAdminSchools = () => {
                                         <label style={labelStyle}>Address</label>
                                         <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} style={inputStyle} />
                                     </div>
+
+                                    {/* ✅ WhatsApp Configuration */}
+                                    <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '16px', backgroundColor: '#f0fff4', borderRadius: '10px', border: '1px solid #9ae6b4' }}>
+                                        <h4 style={{ margin: '0 0 16px 0', color: '#22543d' }}>📱 WhatsApp Configuration (Optional)</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                            <div>
+                                                <label style={labelStyle}>WhatsApp Number</label>
+                                                <input type="text" value={form.whatsapp_number || ''} onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })} placeholder="+92 300 1234567" style={inputStyle} />
+                                            </div>
+                                            <div>
+                                                <label style={labelStyle}>Phone Number ID</label>
+                                                <input type="text" value={form.whatsapp_phone_id || ''} onChange={(e) => setForm({ ...form, whatsapp_phone_id: e.target.value })} placeholder="112083396448143" style={inputStyle} />
+                                            </div>
+                                        </div>
+                                        <div style={{ marginTop: '16px' }}>
+                                            <label style={labelStyle}>Cloud API Key (Access Token)</label>
+                                            <textarea value={form.whatsapp_api_key || ''} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="EAAxxxxx..." rows={3} style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '12px' }} />
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#718096' }}>
+                                                Meta Business Suite → WhatsApp → API Setup se copy karo
+                                            </p>
+                                        </div>
+                                    </div>
+
                                     {editingId && (
                                         <div style={{ gridColumn: '1 / -1' }}>
                                             <label style={labelStyle}>🔑 New Admin Password (Optional — Change Password)</label>
