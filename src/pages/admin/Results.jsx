@@ -14,6 +14,7 @@ const Results = () => {
     const [showForm, setShowForm] = useState(false);
 
     const [form, setForm] = useState({
+        class_id: '',
         exam_id: '',
         student_id: '',
         subject_id: '',
@@ -23,40 +24,80 @@ const Results = () => {
     });
 
     const fetchClasses = async () => {
-        try { const res = await api.get('/classes/'); setClasses(res.data); } catch (err) { console.error(err); }
+        try {
+            const res = await api.get('/classes/');
+            setClasses(res.data);
+        } catch (err) {
+            console.error(err);
+        }
     };
 
+    // ✅ Sahi endpoints
     const fetchStudents = async (classId) => {
         if (!classId) { setStudents([]); return; }
-        try { const res = await api.get(`/students/${classId}`); setStudents(res.data); } catch (err) { setStudents([]); }
+        try {
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
+            setStudents(res.data);
+        } catch (err) { setStudents([]); }
     };
 
     const fetchSubjects = async (classId) => {
         if (!classId) { setSubjects([]); return; }
-        try { const res = await api.get(`/subjects/${classId}`); setSubjects(res.data); } catch (err) { setSubjects([]); }
+        try {
+            let res;
+            try {
+                res = await api.get(`/subjects/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/subjects/${classId}`);
+            }
+            setSubjects(res.data);
+        } catch (err) { setSubjects([]); }
     };
 
     const fetchExams = async (classId) => {
         if (!classId) { setExams([]); return; }
-        try { const res = await api.get(`/exam/class/${classId}`); setExams(res.data); } catch (err) { setExams([]); }
+        try {
+            const res = await api.get(`/exam/class/${classId}`);
+            setExams(res.data);
+        } catch (err) { setExams([]); }
     };
 
     const fetchResults = async (studentId) => {
         if (!studentId) { setResults([]); return; }
-        try { const res = await api.get(`/results/student/${studentId}`); setResults(res.data); } catch (err) { setResults([]); }
+        try {
+            const res = await api.get(`/results/student/${studentId}`);
+            setResults(res.data);
+        } catch (err) { setResults([]); }
     };
 
-    useEffect(() => { fetchClasses(); }, []);
+    useEffect(() => {
+        fetchClasses();
+    }, []);
 
+    // ✅ Form ke class_id change hone par — data fetch
+    useEffect(() => {
+        if (form.class_id) {
+            fetchStudents(form.class_id);
+            fetchSubjects(form.class_id);
+            fetchExams(form.class_id);
+        }
+    }, [form.class_id]);
+
+    // ✅ Filter ke selectedClass change hone par — data fetch
     useEffect(() => {
         if (selectedClass) {
             fetchStudents(selectedClass);
-            fetchSubjects(selectedClass);
-            fetchExams(selectedClass);
         }
     }, [selectedClass]);
 
-    useEffect(() => { if (selectedStudent) fetchResults(selectedStudent); }, [selectedStudent]);
+    useEffect(() => {
+        if (selectedStudent) fetchResults(selectedStudent);
+    }, [selectedStudent]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -71,14 +112,19 @@ const Results = () => {
                 grade: form.grade,
                 remarks: form.remarks,
             });
-            setForm({ exam_id: '', student_id: '', subject_id: '', marks_obtained: '', grade: '', remarks: '' });
+            setForm({
+                class_id: '', exam_id: '', student_id: '', subject_id: '',
+                marks_obtained: '', grade: '', remarks: '',
+            });
             setMessage({ type: 'success', text: 'Result added! ✅' });
             setShowForm(false);
             if (selectedStudent) fetchResults(selectedStudent);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to add result' });
-        } finally { setLoading(false); }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -88,32 +134,83 @@ const Results = () => {
                     <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Results</h1>
                     <p style={{ color: '#718096', margin: 0 }}>Enter and view student marks</p>
                 </div>
-                <button onClick={() => setShowForm(!showForm)} style={{ padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)' }}>
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    style={{
+                        padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none', borderRadius: '10px', cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                    }}
+                >
                     {showForm ? '✕ Cancel' : '+ Add Result'}
                 </button>
             </div>
 
             {message.text && (
-                <div style={{ padding: '14px 20px', borderRadius: '10px', marginBottom: '20px', backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7', color: message.type === 'success' ? '#22543d' : '#c53030', border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`, fontSize: '14px' }}>
+                <div style={{
+                    padding: '14px 20px', borderRadius: '10px', marginBottom: '20px',
+                    backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
+                    color: message.type === 'success' ? '#22543d' : '#c53030',
+                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
+                    fontSize: '14px',
+                }}>
                     {message.text}
                 </div>
             )}
 
             {showForm && (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '2px solid #e2e8f0' }}>
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '24px',
+                    marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    border: '2px solid #e2e8f0',
+                }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add Student Result</h3>
-                    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                    <form onSubmit={handleSubmit} style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '16px',
+                    }}>
+                        {/* ✅ Class field add karo */}
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Exam</label>
-                            <select value={form.exam_id} onChange={(e) => setForm({ ...form, exam_id: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select Exam</option>
-                                {exams.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                            <select
+                                value={form.class_id}
+                                onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: '', subject_id: '' })}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                                required
+                            >
+                                <option value="">Select Class</option>
+                                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
 
                         <div>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Exam</label>
+                            <select
+                                value={form.exam_id}
+                                onChange={(e) => setForm({ ...form, exam_id: e.target.value })}
+                                disabled={!form.class_id}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                required
+                            >
+                                <option value="">Select Exam</option>
+                                {exams.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+                            </select>
+                            {form.class_id && exams.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No exams found</p>
+                            )}
+                        </div>
+
+                        <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
-                            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select
+                                value={form.student_id}
+                                onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                                disabled={!form.class_id}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                required
+                            >
                                 <option value="">Select Student</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
@@ -121,29 +218,69 @@ const Results = () => {
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
-                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select
+                                value={form.subject_id}
+                                onChange={(e) => setForm({ ...form, subject_id: e.target.value })}
+                                disabled={!form.class_id}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                required
+                            >
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {form.class_id && subjects.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found</p>
+                            )}
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Marks Obtained</label>
-                            <input type="number" step="0.5" value={form.marks_obtained} onChange={(e) => setForm({ ...form, marks_obtained: e.target.value })} placeholder="85" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                            <input
+                                type="number"
+                                step="0.5"
+                                value={form.marks_obtained}
+                                onChange={(e) => setForm({ ...form, marks_obtained: e.target.value })}
+                                placeholder="85"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                            />
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Grade</label>
-                            <input type="text" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} placeholder="A+" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                            <input
+                                type="text"
+                                value={form.grade}
+                                onChange={(e) => setForm({ ...form, grade: e.target.value })}
+                                placeholder="A+"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                            />
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Remarks</label>
-                            <input type="text" value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Excellent work" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                            <input
+                                type="text"
+                                value={form.remarks}
+                                onChange={(e) => setForm({ ...form, remarks: e.target.value })}
+                                placeholder="Excellent work"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                            />
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white',
+                                    background: loading ? '#a0aec0' : '#48bb78',
+                                    border: 'none', borderRadius: '10px',
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                }}
+                            >
                                 {loading ? 'Saving...' : '💾 Add Result'}
                             </button>
                         </div>
@@ -151,17 +288,30 @@ const Results = () => {
                 </div>
             )}
 
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{
+                backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px',
+                marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                display: 'flex', gap: '16px', flexWrap: 'wrap',
+            }}>
                 <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                    <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedStudent(''); }} style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}>
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => { setSelectedClass(e.target.value); setSelectedStudent(''); }}
+                        style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
+                    >
                         <option value="">Select Class</option>
                         {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 </div>
                 <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>Student</label>
-                    <select value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} disabled={!selectedClass} style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}>
+                    <select
+                        value={selectedStudent}
+                        onChange={(e) => setSelectedStudent(e.target.value)}
+                        disabled={!selectedClass}
+                        style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}
+                    >
                         <option value="">Select Student</option>
                         {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                     </select>
