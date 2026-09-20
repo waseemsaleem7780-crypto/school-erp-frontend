@@ -65,13 +65,37 @@ const MarkAttendance = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            await api.post('/attendance/', {
-                student_id: parseInt(form.student_id),
-                date: form.date,
-                status: form.status,
-                marked_by: parseInt(form.teacher_id),
-            });
-            setMessage({ type: 'success', text: 'Attendance marked! ✅' });
+            // ✅ Agar "All Students" select hai — bulk mark karo
+            if (form.student_id === 'all') {
+                if (students.length === 0) {
+                    setMessage({ type: 'error', text: 'Is class mein koi student nahi' });
+                    setLoading(false);
+                    return;
+                }
+
+                const records = students.map((s) => ({
+                    student_id: s.id,
+                    date: form.date,
+                    status: form.status,
+                    marked_by: parseInt(form.teacher_id),
+                }));
+
+                await api.post('/attendance/bulk', { records });
+                setMessage({
+                    type: 'success',
+                    text: `✅ ${students.length} students ki attendance mark ho gayi!`,
+                });
+            } else {
+                // Single student
+                await api.post('/attendance/', {
+                    student_id: parseInt(form.student_id),
+                    date: form.date,
+                    status: form.status,
+                    marked_by: parseInt(form.teacher_id),
+                });
+                setMessage({ type: 'success', text: 'Attendance marked! ✅' });
+            }
+
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
@@ -150,6 +174,11 @@ const MarkAttendance = () => {
                                 required
                             >
                                 <option value="">Select Student</option>
+                                {students.length > 0 && (
+                                    <option value="all" style={{ fontWeight: 'bold', color: '#667eea' }}>
+                                        ✅ All Students ({students.length})
+                                    </option>
+                                )}
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
@@ -209,7 +238,11 @@ const MarkAttendance = () => {
                             boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                         }}
                     >
-                        {loading ? 'Marking...' : '✓ Mark Attendance'}
+                        {loading
+                            ? 'Marking...'
+                            : form.student_id === 'all'
+                                ? `✓ Mark All (${students.length})`
+                                : '✓ Mark Attendance'}
                     </button>
                 </form>
             </div>
