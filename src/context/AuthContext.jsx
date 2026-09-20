@@ -3,7 +3,7 @@ import api from '../api/axios';
 
 const AuthContext = createContext();
 
-// ✅ JWT decode (sirf token valid check karne ke liye)
+// ✅ JWT decode function
 const decodeToken = (token) => {
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -68,6 +68,11 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
+            // ✅ Pehle purana data saaf karo
+            localStorage.removeItem('token');
+            setUser(null);
+            setToken(null);
+
             const response = await api.post('/auth/login', { email, password });
             const { access_token, role, school_slug, user_name } = response.data;
 
@@ -110,7 +115,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        // ✅ Saara data saaf karo
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
         setToken(null);
         setUser(null);
         window.location.href = '/login';
