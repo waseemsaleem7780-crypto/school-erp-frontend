@@ -6,13 +6,14 @@ const StudentStudyMaterial = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const BACKEND_URL = 'https://school-erp-backend-production-cad3.up.railway.app';
+
     useEffect(() => {
         fetchMaterials();
     }, []);
 
     const fetchMaterials = async () => {
         try {
-            // Login wale student ki class_id lo
             const meRes = await api.get('/auth/me');
             const classId = meRes.data.class_id;
 
@@ -22,7 +23,6 @@ const StudentStudyMaterial = () => {
                 return;
             }
 
-            // Us class ki study material lo
             const res = await api.get(`/study-material/class/${classId}`);
             const data = Array.isArray(res.data) ? res.data : [];
             setMaterials(data);
@@ -41,6 +41,14 @@ const StudentStudyMaterial = () => {
         if (['jpg', 'jpeg', 'png'].includes(ext)) return '🖼️';
         if (['doc', 'docx'].includes(ext)) return '📘';
         return '📄';
+    };
+
+    // ✅ File URL banao
+    const getFileUrl = (filePath) => {
+        if (!filePath) return '#';
+        if (filePath.startsWith('http')) return filePath;
+        const separator = filePath.startsWith('/') ? '' : '/';
+        return `${BACKEND_URL}${separator}${filePath}`;
     };
 
     if (loading) {
@@ -103,7 +111,7 @@ const StudentStudyMaterial = () => {
                             <p style={{ color: '#718096', margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.5' }}>{m.description}</p>
                             {m.file_path && (
                                 <a
-                                    href={m.file_path}
+                                    href={getFileUrl(m.file_path)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{
