@@ -28,10 +28,16 @@ const Exams = () => {
         } catch (err) { console.error(err); }
     };
 
+    // ✅ Sahi endpoint — /subjects/class/{class_id}
     const fetchSubjects = async (classId) => {
         if (!classId) { setSubjects([]); return; }
         try {
-            const res = await api.get(`/subjects/${classId}`);
+            let res;
+            try {
+                res = await api.get(`/subjects/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/subjects/${classId}`);
+            }
             setSubjects(res.data);
         } catch (err) { setSubjects([]); }
     };
@@ -114,6 +120,9 @@ const Exams = () => {
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {form.class_id && subjects.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found for this class</p>
+                            )}
                         </div>
 
                         <div>
