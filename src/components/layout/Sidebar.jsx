@@ -26,7 +26,7 @@ const Sidebar = () => {
     const prefix = schoolSlug ? `/${schoolSlug}` : '';
 
     const superAdminMenu = [
-        { name: 'Schools Management', path: '/superadmin/schools', icon: '🏫' },
+        { name: 'Schools Management', path: '/superadmin/schools' },
     ];
 
     const adminMenu = [
