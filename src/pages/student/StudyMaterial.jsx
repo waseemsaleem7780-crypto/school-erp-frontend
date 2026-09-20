@@ -4,6 +4,7 @@ import api from '../../api/axios';
 const StudentStudyMaterial = () => {
     const [materials, setMaterials] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchMaterials();
@@ -11,9 +12,22 @@ const StudentStudyMaterial = () => {
 
     const fetchMaterials = async () => {
         try {
-            const res = await api.get('/study-material/class/1');
-            setMaterials(res.data);
+            // Login wale student ki class_id lo
+            const meRes = await api.get('/auth/me');
+            const classId = meRes.data.class_id;
+
+            if (!classId) {
+                setError('Class not assigned');
+                setLoading(false);
+                return;
+            }
+
+            // Us class ki study material lo
+            const res = await api.get(`/study-material/class/${classId}`);
+            const data = Array.isArray(res.data) ? res.data : [];
+            setMaterials(data);
         } catch (err) {
+            setError(err.response?.data?.detail || 'Failed to load study material');
             setMaterials([]);
         } finally {
             setLoading(false);
@@ -29,6 +43,10 @@ const StudentStudyMaterial = () => {
         return '📄';
     };
 
+    if (loading) {
+        return <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>;
+    }
+
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ marginBottom: '30px' }}>
@@ -40,9 +58,19 @@ const StudentStudyMaterial = () => {
                 </p>
             </div>
 
-            {loading ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
-            ) : materials.length === 0 ? (
+            {error && (
+                <div style={{
+                    padding: '20px 24px',
+                    borderRadius: '12px',
+                    background: '#fed7d7',
+                    color: '#c53030',
+                    marginBottom: '20px',
+                }}>
+                    ⚠️ {error}
+                </div>
+            )}
+
+            {materials.length === 0 ? (
                 <div style={{
                     backgroundColor: 'white',
                     borderRadius: '16px',
@@ -52,6 +80,9 @@ const StudentStudyMaterial = () => {
                 }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
                     <p style={{ color: '#718096' }}>No study material yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Aap ki class ke liye abhi kuch upload nahi hua
+                    </p>
                 </div>
             ) : (
                 <div style={{
