@@ -5,6 +5,7 @@ const MyResults = () => {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [debugInfo, setDebugInfo] = useState(null);
 
     useEffect(() => {
         fetchResults();
@@ -12,17 +13,20 @@ const MyResults = () => {
 
     const fetchResults = async () => {
         try {
-            // ✅ Step 1: Login wale student ki asli ID lo
+            // Step 1: Login wale student ki info lo
             const meRes = await api.get('/auth/me');
+            console.log('ME RESPONSE:', meRes.data);
+            setDebugInfo(meRes.data);
+
             const studentId = meRes.data.student_id;
 
             if (!studentId) {
-                setError('Student profile not linked. Please contact admin.');
+                setError('Aap ka student profile abhi tak admin se link nahi hua. Admin se rabta karo.');
                 setLoading(false);
                 return;
             }
 
-            // ✅ Step 2: Sirf usi student ke results lo
+            // Step 2: Us student ke results lo
             const res = await api.get(`/results/student/${studentId}`);
             const data = Array.isArray(res.data) ? res.data : [];
             setResults(data);
@@ -51,9 +55,24 @@ const MyResults = () => {
                     borderRadius: '12px',
                     background: '#fed7d7',
                     color: '#c53030',
+                    marginBottom: '16px',
                 }}>
                     ⚠️ {error}
                 </div>
+                {debugInfo && (
+                    <div style={{
+                        padding: '16px',
+                        borderRadius: '8px',
+                        background: '#f7fafc',
+                        fontSize: '13px',
+                        color: '#4a5568',
+                    }}>
+                        <strong>Debug Info:</strong>
+                        <pre style={{ margin: '8px 0 0 0' }}>
+                            {JSON.stringify(debugInfo, null, 2)}
+                        </pre>
+                    </div>
+                )}
             </div>
         );
     }
