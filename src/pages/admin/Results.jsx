@@ -16,7 +16,7 @@ const Results = () => {
     const [form, setForm] = useState({
         class_id: '',
         exam_id: '',
-        student_id: '',
+        student_id: 'all',
         subject_id: '',
         marks_obtained: '',
         grade: '',
@@ -32,7 +32,6 @@ const Results = () => {
         }
     };
 
-    // ✅ Sahi endpoints
     const fetchStudents = async (classId) => {
         if (!classId) { setStudents([]); return; }
         try {
@@ -79,7 +78,6 @@ const Results = () => {
         fetchClasses();
     }, []);
 
-    // ✅ Form ke class_id change hone par — data fetch
     useEffect(() => {
         if (form.class_id) {
             fetchStudents(form.class_id);
@@ -88,7 +86,6 @@ const Results = () => {
         }
     }, [form.class_id]);
 
-    // ✅ Filter ke selectedClass change hone par — data fetch
     useEffect(() => {
         if (selectedClass) {
             fetchStudents(selectedClass);
@@ -103,20 +100,34 @@ const Results = () => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
+
+        // ✅ "All Students" select — saare students ko result
+        const targetStudentIds = form.student_id === 'all'
+            ? students.map(s => s.id)
+            : [parseInt(form.student_id)];
+
         try {
-            await api.post('/results/', {
-                exam_id: parseInt(form.exam_id),
-                student_id: parseInt(form.student_id),
-                subject_id: parseInt(form.subject_id),
-                marks_obtained: parseFloat(form.marks_obtained),
-                grade: form.grade,
-                remarks: form.remarks,
-            });
+            for (const studentId of targetStudentIds) {
+                await api.post('/results/', {
+                    exam_id: parseInt(form.exam_id),
+                    student_id: studentId,
+                    subject_id: parseInt(form.subject_id),
+                    marks_obtained: parseFloat(form.marks_obtained),
+                    grade: form.grade,
+                    remarks: form.remarks,
+                });
+            }
+
             setForm({
-                class_id: '', exam_id: '', student_id: '', subject_id: '',
+                class_id: '', exam_id: '', student_id: 'all', subject_id: '',
                 marks_obtained: '', grade: '', remarks: '',
             });
-            setMessage({ type: 'success', text: 'Result added! ✅' });
+            setMessage({
+                type: 'success',
+                text: form.student_id === 'all'
+                    ? `Result added for ${targetStudentIds.length} students! ✅ WhatsApp bhi gaya!`
+                    : 'Result added! ✅ WhatsApp bhi gaya!'
+            });
             setShowForm(false);
             if (selectedStudent) fetchResults(selectedStudent);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
@@ -171,12 +182,11 @@ const Results = () => {
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '16px',
                     }}>
-                        {/* ✅ Class field add karo */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
                             <select
                                 value={form.class_id}
-                                onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: '', subject_id: '' })}
+                                onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: 'all', subject_id: '' })}
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                 required
                             >
@@ -211,7 +221,8 @@ const Results = () => {
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
                                 required
                             >
-                                <option value="">Select Student</option>
+                                {/* ✅ "All Students" option */}
+                                <option value="all">📚 All Students (Poori Class)</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
