@@ -18,7 +18,7 @@ const Timetable = () => {
         section_id: '',
         subject_id: '',
         teacher_id: '',
-        day_of_week: 'Monday',
+        days: ['Monday'],   // ✅ Multiple days
         start_time: '',
         end_time: '',
     });
@@ -39,7 +39,6 @@ const Timetable = () => {
         }
     };
 
-    // ✅ Sections endpoint sahi hai
     const fetchSections = async (classId) => {
         if (!classId) { setSections([]); return; }
         try {
@@ -50,7 +49,6 @@ const Timetable = () => {
         }
     };
 
-    // ✅ Sahi endpoint — /subjects/class/{class_id}
     const fetchSubjects = async (classId) => {
         if (!classId) { setSubjects([]); return; }
         try {
@@ -94,22 +92,43 @@ const Timetable = () => {
         if (selectedClass) fetchTimetable(selectedClass);
     }, [selectedClass]);
 
+    // ✅ Day toggle function
+    const toggleDay = (day) => {
+        setForm((prev) => {
+            const days = prev.days.includes(day)
+                ? prev.days.filter((d) => d !== day)
+                : [...prev.days, day];
+            return { ...prev, days };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
+
+        if (form.days.length === 0) {
+            setMessage({ type: 'error', text: 'Kam se kam ek din select karo' });
+            setLoading(false);
+            return;
+        }
+
         try {
             await api.post('/timetable/', {
                 class_id: parseInt(form.class_id),
                 section_id: parseInt(form.section_id),
                 subject_id: parseInt(form.subject_id),
                 teacher_id: parseInt(form.teacher_id),
-                day_of_week: form.day_of_week,
+                days: form.days,        // ✅ Multiple days
                 start_time: form.start_time,
                 end_time: form.end_time,
             });
-            setForm({ ...form, start_time: '', end_time: '' });
-            setMessage({ type: 'success', text: 'Timetable entry added! ✅' });
+
+            setForm({ ...form, start_time: '', end_time: '', days: ['Monday'] });
+            setMessage({
+                type: 'success',
+                text: `Timetable entry added for ${form.days.length} day(s)! ✅`
+            });
             setShowForm(false);
             if (selectedClass) fetchTimetable(selectedClass);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
@@ -209,9 +228,6 @@ const Timetable = () => {
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
-                            {form.class_id && subjects.length === 0 && (
-                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found</p>
-                            )}
                         </div>
 
                         <div>
@@ -227,16 +243,45 @@ const Timetable = () => {
                             </select>
                         </div>
 
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Day</label>
-                            <select
-                                value={form.day_of_week}
-                                onChange={(e) => setForm({ ...form, day_of_week: e.target.value })}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                required
-                            >
-                                {days.map((d) => <option key={d} value={d}>{d}</option>)}
-                            </select>
+                        {/* ✅ Multiple Days Checkboxes */}
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
+                                Days (Multiple select karo)
+                            </label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                                {days.map((day) => (
+                                    <label
+                                        key={day}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '10px 16px',
+                                            border: '2px solid',
+                                            borderColor: form.days.includes(day) ? '#667eea' : '#e2e8f0',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            backgroundColor: form.days.includes(day) ? '#ebf4ff' : 'white',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            color: form.days.includes(day) ? '#667eea' : '#4a5568',
+                                        }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={form.days.includes(day)}
+                                            onChange={() => toggleDay(day)}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        {day}
+                                    </label>
+                                ))}
+                            </div>
+                            {form.days.length > 0 && (
+                                <p style={{ fontSize: '12px', color: '#38a169', margin: '8px 0 0 0' }}>
+                                    ✅ {form.days.length} day(s) selected: {form.days.join(', ')}
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -272,7 +317,7 @@ const Timetable = () => {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
-                                {loading ? 'Saving...' : '💾 Save Entry'}
+                                {loading ? 'Saving...' : `💾 Save Entry (${form.days.length} days)`}
                             </button>
                         </div>
                     </form>
@@ -320,15 +365,10 @@ const Timetable = () => {
                                 <div style={{ padding: '16px', display: 'grid', gap: '8px' }}>
                                     {dayEntries.map((entry) => (
                                         <div key={entry.id} style={{
-                                            padding: '12px 16px',
-                                            borderRadius: '8px',
-                                            backgroundColor: '#f7fafc',
-                                            borderLeft: '4px solid #764ba2',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            flexWrap: 'wrap',
-                                            gap: '8px',
+                                            padding: '12px 16px', borderRadius: '8px',
+                                            backgroundColor: '#f7fafc', borderLeft: '4px solid #764ba2',
+                                            display: 'flex', justifyContent: 'space-between',
+                                            alignItems: 'center', flexWrap: 'wrap', gap: '8px',
                                         }}>
                                             <div>
                                                 <p style={{ margin: 0, color: '#1a202c', fontWeight: '600' }}>
@@ -339,12 +379,9 @@ const Timetable = () => {
                                                 </p>
                                             </div>
                                             <span style={{
-                                                padding: '6px 14px',
-                                                borderRadius: '20px',
-                                                backgroundColor: '#ebf8ff',
-                                                color: '#2c5282',
-                                                fontSize: '13px',
-                                                fontWeight: '600',
+                                                padding: '6px 14px', borderRadius: '20px',
+                                                backgroundColor: '#ebf8ff', color: '#2c5282',
+                                                fontSize: '13px', fontWeight: '600',
                                             }}>
                                                 🕐 {entry.start_time} - {entry.end_time}
                                             </span>
