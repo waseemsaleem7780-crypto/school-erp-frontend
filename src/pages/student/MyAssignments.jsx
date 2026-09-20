@@ -11,11 +11,16 @@ const MyAssignments = () => {
 
     const fetchAssignments = async () => {
         try {
-            // ✅ Pehle current user ka student_id dhundo
+            // ✅ /auth/me se student_id lo
             const meRes = await api.get('/auth/me');
-            const studentId = meRes.data.student_id || meRes.data.id;
+            const studentId = meRes.data.student_id;
+            
+            if (!studentId) {
+                console.error('Student ID not found');
+                setAssignments([]);
+                return;
+            }
 
-            // ✅ Phir us student ki assignments
             const res = await api.get(`/assignment/student/${studentId}`);
             setAssignments(res.data);
         } catch (err) {

@@ -14,7 +14,7 @@ const TeacherAssignments = () => {
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
-        student_id: 'all',   // ✅ Default: All Students
+        student_id: 'all',
         teacher_id: '',
         title: '',
         description: '',
@@ -49,10 +49,23 @@ const TeacherAssignments = () => {
         }
     };
 
+    // ✅ Unique assignments — ek title sirf ek baar
     const fetchAllAssignments = async () => {
         try {
             const res = await api.get('/assignment/');
-            setAssignments(res.data);
+
+            const uniqueAssignments = [];
+            const seen = new Set();
+
+            res.data.forEach(a => {
+                const key = `${a.title}-${a.deadline}-${a.description}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueAssignments.push(a);
+                }
+            });
+
+            setAssignments(uniqueAssignments);
         } catch (err) {
             console.error(err);
         }
@@ -159,7 +172,6 @@ const TeacherAssignments = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
-        // ✅ Agar "All Students" select — to saare students ko assignment bhejo
         const targetStudentIds = form.student_id === 'all'
             ? students.map(s => s.id)
             : [parseInt(form.student_id)];
@@ -177,7 +189,6 @@ const TeacherAssignments = () => {
                 });
                 setMessage({ type: 'success', text: 'Assignment updated! ✅' });
             } else {
-                // ✅ Har student ke liye alag assignment banao
                 for (const studentId of targetStudentIds) {
                     await api.post('/assignment/', {
                         student_id: studentId,
@@ -189,9 +200,9 @@ const TeacherAssignments = () => {
                         file_path: form.file_url,
                     });
                 }
-                setMessage({ 
-                    type: 'success', 
-                    text: form.student_id === 'all' 
+                setMessage({
+                    type: 'success',
+                    text: form.student_id === 'all'
                         ? `Assignment sent to ${targetStudentIds.length} students! ✅`
                         : 'Assignment saved! ✅'
                 });
@@ -286,7 +297,6 @@ const TeacherAssignments = () => {
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
                             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                {/* ✅ "All Students" option */}
                                 <option value="all">📚 All Students (Poori Class)</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
@@ -352,15 +362,14 @@ const TeacherAssignments = () => {
                                     </button>
                                 )}
                             </div>
-                            {/* ✅ File URL Link */}
                             {form.file_url && (
                                 <div style={{ marginTop: '8px' }}>
                                     <p style={{ fontSize: '12px', color: '#22543d', fontWeight: '600', margin: '0 0 4px 0' }}>
                                         ✅ File ready hai
                                     </p>
-                                    <a 
-                                        href={form.file_url} 
-                                        target="_blank" 
+                                    <a
+                                        href={form.file_url}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         style={{ fontSize: '12px', color: '#667eea', textDecoration: 'underline' }}
                                     >
