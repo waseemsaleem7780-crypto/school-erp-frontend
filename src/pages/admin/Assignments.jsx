@@ -16,7 +16,7 @@ const Assignments = () => {
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
-        student_id: '',
+        student_id: 'all',
         teacher_id: '',
         title: '',
         description: '',
@@ -25,28 +25,62 @@ const Assignments = () => {
 
     const fetchData = async () => {
         try {
-            const [c, t] = await Promise.all([api.get('/classes/'), api.get('/teachers/')]);
+            const [c, t] = await Promise.all([
+                api.get('/classes/'),
+                api.get('/teachers/')
+            ]);
             setClasses(c.data);
             setTeachers(t.data);
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+        }
     };
 
+    // ✅ Sahi endpoint — /subjects/class/{class_id}
     const fetchSubjects = async (classId) => {
         if (!classId) { setSubjects([]); return; }
-        try { const res = await api.get(`/subjects/${classId}`); setSubjects(res.data); } catch (err) { setSubjects([]); }
+        try {
+            let res;
+            try {
+                res = await api.get(`/subjects/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/subjects/${classId}`);
+            }
+            setSubjects(res.data);
+        } catch (err) {
+            setSubjects([]);
+        }
     };
 
+    // ✅ Sahi endpoint — /students/class/{class_id}
     const fetchStudents = async (classId) => {
         if (!classId) { setStudents([]); return; }
-        try { const res = await api.get(`/students/${classId}`); setStudents(res.data); } catch (err) { setStudents([]); }
+        try {
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
+            setStudents(res.data);
+        } catch (err) {
+            setStudents([]);
+        }
     };
 
     const fetchAssignments = async (studentId) => {
         if (!studentId) { setAssignments([]); return; }
-        try { const res = await api.get(`/assignment/student/${studentId}`); setAssignments(res.data); } catch (err) { setAssignments([]); }
+        try {
+            const res = await api.get(`/assignment/student/${studentId}`);
+            setAssignments(res.data);
+        } catch (err) {
+            setAssignments([]);
+        }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     useEffect(() => {
         if (form.class_id) {
@@ -55,30 +89,56 @@ const Assignments = () => {
         }
     }, [form.class_id]);
 
-    useEffect(() => { if (selectedClass) fetchStudents(selectedClass); }, [selectedClass]);
-    useEffect(() => { if (selectedStudent) fetchAssignments(selectedStudent); }, [selectedStudent]);
+    useEffect(() => {
+        if (selectedClass) fetchStudents(selectedClass);
+    }, [selectedClass]);
+
+    useEffect(() => {
+        if (selectedStudent) fetchAssignments(selectedStudent);
+    }, [selectedStudent]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage({ type: '', text: '' });
+
+        // ✅ "All Students" — saare students ko assignment
+        const targetStudentIds = form.student_id === 'all'
+            ? students.map(s => s.id)
+            : [parseInt(form.student_id)];
+
         try {
-            await api.post('/assignment/', {
-                student_id: parseInt(form.student_id),
-                subject_id: parseInt(form.subject_id),
-                teacher_id: parseInt(form.teacher_id),
-                title: form.title,
-                description: form.description,
-                deadline: form.deadline,
-            });
+            for (const studentId of targetStudentIds) {
+                await api.post('/assignment/', {
+                    student_id: studentId,
+                    subject_id: parseInt(form.subject_id),
+                    teacher_id: parseInt(form.teacher_id),
+                    title: form.title,
+                    description: form.description,
+                    deadline: form.deadline,
+                });
+            }
+
             setForm({ ...form, title: '', description: '', deadline: '' });
-            setMessage({ type: 'success', text: 'Assignment added! ✅' });
+            setMessage({
+                type: 'success',
+                text: form.student_id === 'all'
+                    ? `Assignment sent to ${targetStudentIds.length} students! ✅`
+                    : 'Assignment added! ✅'
+            });
             setShowForm(false);
-            if (form.student_id) fetchAssignments(form.student_id);
+            if (form.student_id && form.student_id !== 'all') {
+                fetchAssignments(form.student_id);
+            }
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to add assignment' });
-        } finally { setLoading(false); }
+            setMessage({
+                type: 'error',
+                text: error.response?.data?.detail || 'Failed to add assignment'
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const isOverdue = (deadline) => new Date(deadline) < new Date();
@@ -90,24 +150,51 @@ const Assignments = () => {
                     <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Assignments</h1>
                     <p style={{ color: '#718096', margin: 0 }}>Track student assignment submissions</p>
                 </div>
-                <button onClick={() => setShowForm(!showForm)} style={{ padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)' }}>
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    style={{
+                        padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none', borderRadius: '10px', cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                    }}
+                >
                     {showForm ? '✕ Cancel' : '+ Add Assignment'}
                 </button>
             </div>
 
             {message.text && (
-                <div style={{ padding: '14px 20px', borderRadius: '10px', marginBottom: '20px', backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7', color: message.type === 'success' ? '#22543d' : '#c53030', border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`, fontSize: '14px' }}>
+                <div style={{
+                    padding: '14px 20px', borderRadius: '10px', marginBottom: '20px',
+                    backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
+                    color: message.type === 'success' ? '#22543d' : '#c53030',
+                    border: `1px solid ${message.type === 'success' ? '#9ae6b4' : '#fc8181'}`,
+                    fontSize: '14px',
+                }}>
                     {message.text}
                 </div>
             )}
 
             {showForm && (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '2px solid #e2e8f0' }}>
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '24px',
+                    marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    border: '2px solid #e2e8f0',
+                }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>Add New Assignment</h3>
-                    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                    <form onSubmit={handleSubmit} style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '16px',
+                    }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select
+                                value={form.class_id}
+                                onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                                required
+                            >
                                 <option value="">Select Class</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
@@ -115,23 +202,44 @@ const Assignments = () => {
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
-                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                            <select
+                                value={form.subject_id}
+                                onChange={(e) => setForm({ ...form, subject_id: e.target.value })}
+                                disabled={!form.class_id}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                required
+                            >
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {form.class_id && subjects.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found</p>
+                            )}
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
-                            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Student</option>
+                            <select
+                                value={form.student_id}
+                                onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                                disabled={!form.class_id}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                required
+                            >
+                                {/* ✅ All Students option */}
+                                <option value="all">📚 All Students (Poori Class)</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Teacher</label>
-                            <select value={form.teacher_id} onChange={(e) => setForm({ ...form, teacher_id: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select
+                                value={form.teacher_id}
+                                onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                                required
+                            >
                                 <option value="">Select Teacher</option>
                                 {teachers.map((t) => <option key={t.id} value={t.id}>{t.qualification} (ID: {t.id})</option>)}
                             </select>
@@ -139,21 +247,49 @@ const Assignments = () => {
 
                         <div style={{ gridColumn: '1 / -1' }}>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Title</label>
-                            <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Assignment title" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                            <input
+                                type="text"
+                                value={form.title}
+                                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                placeholder="Assignment title"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                            />
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Description</label>
-                            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Arial' }} required />
+                            <textarea
+                                value={form.description}
+                                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                rows="3"
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Arial' }}
+                                required
+                            />
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Deadline</label>
-                            <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                            <input
+                                type="date"
+                                value={form.deadline}
+                                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                required
+                            />
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white',
+                                    background: loading ? '#a0aec0' : '#48bb78',
+                                    border: 'none', borderRadius: '10px',
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                }}
+                            >
                                 {loading ? 'Saving...' : '💾 Add Assignment'}
                             </button>
                         </div>
@@ -161,17 +297,30 @@ const Assignments = () => {
                 </div>
             )}
 
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{
+                backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px',
+                marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                display: 'flex', gap: '16px', flexWrap: 'wrap',
+            }}>
                 <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                    <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedStudent(''); }} style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}>
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => { setSelectedClass(e.target.value); setSelectedStudent(''); }}
+                        style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
+                    >
                         <option value="">Select Class</option>
                         {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 </div>
                 <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>Student</label>
-                    <select value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} disabled={!selectedClass} style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}>
+                    <select
+                        value={selectedStudent}
+                        onChange={(e) => setSelectedStudent(e.target.value)}
+                        disabled={!selectedClass}
+                        style={{ padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}
+                    >
                         <option value="">Select Student</option>
                         {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                     </select>
