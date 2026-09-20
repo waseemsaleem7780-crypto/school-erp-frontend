@@ -10,7 +10,7 @@ const TeacherAssignments = () => {
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [editingId, setEditingId] = useState(null);
-    
+
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
@@ -22,7 +22,7 @@ const TeacherAssignments = () => {
         file: null,
         file_url: '',
     });
-    
+
     const [message, setMessage] = useState({ type: '', text: '' });
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -60,32 +60,33 @@ const TeacherAssignments = () => {
 
     const fetchSubjects = async (classId) => {
         try {
-            const res = await api.get(`/subjects/${classId}`);
+            // ✅ Try both endpoints
+            let res;
+            try {
+                res = await api.get(`/subjects/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/subjects/${classId}`);
+            }
             setSubjects(res.data);
         } catch (err) {
+            console.error('Subjects fetch failed:', err);
             setSubjects([]);
         }
     };
 
     const fetchStudents = async (classId) => {
         try {
-            const res = await api.get(`/students/${classId}`);
+            // ✅ Try both endpoints
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
             setStudents(res.data);
         } catch (err) {
+            console.error('Students fetch failed:', err);
             setStudents([]);
-        }
-    };
-
-    const fetchAssignments = async (studentId) => {
-        try {
-            if (studentId) {
-                const res = await api.get(`/assignment/student/${studentId}`);
-                setAssignments(res.data);
-            } else {
-                fetchAllAssignments();
-            }
-        } catch (err) {
-            setAssignments([]);
         }
     };
 
@@ -146,7 +147,7 @@ const TeacherAssignments = () => {
 
     const handleDelete = async (id) => {
         if (!window.confirm('Kya aap waqai ye assignment delete karna chahte ho?')) return;
-        
+
         try {
             await api.delete(`/assignment/${id}`);
             setMessage({ type: 'success', text: 'Assignment deleted! ✅' });
@@ -186,7 +187,7 @@ const TeacherAssignments = () => {
                 });
                 setMessage({ type: 'success', text: 'Assignment saved! ✅' });
             }
-            
+
             setForm({ ...form, title: '', description: '', deadline: '', file: null, file_url: '' });
             setEditingId(null);
             setShowForm(false);
@@ -267,10 +268,13 @@ const TeacherAssignments = () => {
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
-                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}>
+                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {form.class_id && subjects.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found for this class</p>
+                            )}
                         </div>
 
                         <div>
@@ -279,6 +283,9 @@ const TeacherAssignments = () => {
                                 <option value="">Select Student</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
+                            {form.class_id && students.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No students found for this class</p>
+                            )}
                         </div>
 
                         <div>
@@ -382,36 +389,12 @@ const TeacherAssignments = () => {
                                     </span>
                                 </div>
                                 <p style={{ color: '#718096', margin: '8px 0', fontSize: '14px' }}>{a.description}</p>
-                                
+
                                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                                    <button
-                                        onClick={() => handleEdit(a)}
-                                        style={{
-                                            padding: '8px 16px',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                            color: 'white',
-                                            background: '#667eea',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
+                                    <button onClick={() => handleEdit(a)} style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#667eea', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
                                         ✏️ Edit
                                     </button>
-                                    <button
-                                        onClick={() => handleDelete(a.id)}
-                                        style={{
-                                            padding: '8px 16px',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                            color: 'white',
-                                            background: '#dc2626',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
+                                    <button onClick={() => handleDelete(a.id)} style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '600', color: 'white', background: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
                                         🗑️ Delete
                                     </button>
                                 </div>
