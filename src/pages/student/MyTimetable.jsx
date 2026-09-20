@@ -14,7 +14,6 @@ const MyTimetable = () => {
 
     const fetchTimetable = async () => {
         try {
-            // Step 1: Student ki info lo
             const meRes = await api.get('/auth/me');
             const classId = meRes.data.class_id;
 
@@ -24,7 +23,6 @@ const MyTimetable = () => {
                 return;
             }
 
-            // Step 2: Us class ki timetable lo
             const res = await api.get(`/timetable/class/${classId}`);
             const data = Array.isArray(res.data) ? res.data : [];
             setTimetable(data);
