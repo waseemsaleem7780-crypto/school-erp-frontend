@@ -32,7 +32,8 @@ const TeacherTimetable = () => {
     const fetchTimetable = async (classId) => {
         try {
             const res = await api.get(`/timetable/class/${classId}`);
-            setTimetable(res.data);
+            const data = Array.isArray(res.data) ? res.data : [];
+            setTimetable(data);
         } catch (err) {
             setTimetable([]);
         }
@@ -97,10 +98,10 @@ const TeacherTimetable = () => {
                                         }}>
                                             <div>
                                                 <p style={{ margin: 0, color: '#1a202c', fontWeight: '600' }}>
-                                                    Subject #{entry.subject_id}
+                                                    {entry.subject_name || `Subject #${entry.subject_id}`}
                                                 </p>
                                                 <p style={{ margin: '4px 0 0 0', color: '#718096', fontSize: '13px' }}>
-                                                    Teacher #{entry.teacher_id}
+                                                    👨‍🏫 {entry.teacher_name || `Teacher #${entry.teacher_id}`}
                                                 </p>
                                             </div>
                                             <span style={{
