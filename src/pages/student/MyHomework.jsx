@@ -11,9 +11,20 @@ const MyHomework = () => {
 
     const fetchHomework = async () => {
         try {
-            const res = await api.get('/homework/student/1');
+            // ✅ /auth/me se student_id lo
+            const meRes = await api.get('/auth/me');
+            const studentId = meRes.data.student_id;
+
+            if (!studentId) {
+                console.error('Student ID not found');
+                setHomework([]);
+                return;
+            }
+
+            const res = await api.get(`/homework/student/${studentId}`);
             setHomework(res.data);
         } catch (err) {
+            console.error('Homework fetch failed:', err);
             setHomework([]);
         } finally {
             setLoading(false);
