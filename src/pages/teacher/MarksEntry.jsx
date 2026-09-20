@@ -10,7 +10,7 @@ const MarksEntry = () => {
     const [form, setForm] = useState({
         class_id: '',
         exam_id: '',
-        student_id: '',
+        student_id: 'all',  // ✅ All Students default
         subject_id: '',
         marks_obtained: '',
         grade: '',
@@ -29,6 +29,7 @@ const MarksEntry = () => {
             fetchSubjects(form.class_id);
             fetchStudents(form.class_id);
             fetchExams(form.class_id);
+            fetchResultsByClass(form.class_id);
         }
     }, [form.class_id]);
 
@@ -36,24 +37,39 @@ const MarksEntry = () => {
         try {
             const res = await api.get('/classes/');
             setClasses(res.data);
+            if (res.data.length > 0) {
+                setForm((prev) => ({ ...prev, class_id: String(res.data[0].id) }));
+            }
         } catch (err) {
             console.error(err);
         }
     };
 
+    // ✅ Subjects — dono endpoints try karo
     const fetchSubjects = async (classId) => {
         try {
-            const res = await api.get(`/subjects/${classId}`);
-            setSubjects(res.data);
+            let res;
+            try {
+                res = await api.get(`/subjects/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/subjects/${classId}`);
+            }
+            setSubjects(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
+            console.error('subjects error:', err);
             setSubjects([]);
         }
     };
 
     const fetchStudents = async (classId) => {
         try {
-            const res = await api.get(`/students/${classId}`);
-            setStudents(res.data);
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
+            setStudents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setStudents([]);
         }
@@ -62,9 +78,35 @@ const MarksEntry = () => {
     const fetchExams = async (classId) => {
         try {
             const res = await api.get(`/exam/class/${classId}`);
-            setExams(res.data);
+            setExams(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setExams([]);
+        }
+    };
+
+    // ✅ Class ke results — students ke through
+    const fetchResultsByClass = async (classId) => {
+        try {
+            let studentsRes;
+            try {
+                studentsRes = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                studentsRes = await api.get(`/students/${classId}`);
+            }
+            const classStudents = studentsRes.data || [];
+
+            const all = [];
+            for (const s of classStudents) {
+                try {
+                    const r = await api.get(`/results/student/${s.id}`);
+                    if (Array.isArray(r.data)) {
+                        all.push(...r.data.map(x => ({ ...x, student_roll: s.roll_number })));
+                    }
+                } catch (e) { /* skip */ }
+            }
+            setResults(all);
+        } catch (err) {
+            setResults([]);
         }
     };
 
@@ -73,19 +115,47 @@ const MarksEntry = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
+        // ✅ Target students
+        const targetIds = form.student_id === 'all'
+            ? students.map(s => s.id)
+            : [parseInt(form.student_id)];
+
+        if (targetIds.length === 0) {
+            setMessage({ type: 'error', text: 'Koi student nahi mila is class mein' });
+            setLoading(false);
+            return;
+        }
+
         try {
-            await api.post('/results/', {
-                exam_id: parseInt(form.exam_id),
-                student_id: parseInt(form.student_id),
-                subject_id: parseInt(form.subject_id),
-                marks_obtained: parseFloat(form.marks_obtained),
-                grade: form.grade,
-                remarks: form.remarks,
-            });
-            setMessage({ type: 'success', text: 'Marks saved! ✅' });
-            setForm({ ...form, marks_obtained: '', grade: '', remarks: '' });
-            setShowForm(false);
-            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            let successCount = 0;
+            for (const sid of targetIds) {
+                try {
+                    await api.post('/results/', {
+                        exam_id: parseInt(form.exam_id),
+                        student_id: sid,
+                        subject_id: parseInt(form.subject_id),
+                        marks_obtained: parseFloat(form.marks_obtained),
+                        grade: form.grade,
+                        remarks: form.remarks,
+                    });
+                    successCount++;
+                } catch (e) {
+                    console.error(`Failed for student ${sid}:`, e);
+                }
+            }
+
+            if (successCount > 0) {
+                setMessage({
+                    type: 'success',
+                    text: `${successCount} students ke marks save ho gaye! ✅`,
+                });
+                setForm({ ...form, marks_obtained: '', grade: '', remarks: '' });
+                setShowForm(false);
+                await fetchResultsByClass(form.class_id);
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: 'Koi marks save nahi hue' });
+            }
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to save marks' });
         } finally {
@@ -103,14 +173,9 @@ const MarksEntry = () => {
                 <button
                     onClick={() => setShowForm(!showForm)}
                     style={{
-                        padding: '12px 24px',
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        color: 'white',
+                        padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white',
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
+                        border: 'none', borderRadius: '10px', cursor: 'pointer',
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
@@ -120,9 +185,7 @@ const MarksEntry = () => {
 
             {message.text && (
                 <div style={{
-                    padding: '14px 20px',
-                    borderRadius: '10px',
-                    marginBottom: '20px',
+                    padding: '14px 20px', borderRadius: '10px', marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
                 }}>
@@ -131,18 +194,12 @@ const MarksEntry = () => {
             )}
 
             {showForm && (
-                <div style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    marginBottom: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>Enter Student Marks</h3>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: '', subject_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: 'all', subject_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
                                 <option value="">Select Class</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
@@ -159,7 +216,7 @@ const MarksEntry = () => {
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
                             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Student</option>
+                                <option value="all">📚 All Students ({students.length})</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
@@ -170,6 +227,11 @@ const MarksEntry = () => {
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {form.class_id && subjects.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>
+                                    Is class mein koi subject nahi — admin se add karwao
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -189,7 +251,11 @@ const MarksEntry = () => {
 
                         <div style={{ gridColumn: '1 / -1' }}>
                             <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                {loading ? 'Saving...' : '💾 Save Marks'}
+                                {loading
+                                    ? 'Saving...'
+                                    : form.student_id === 'all'
+                                        ? `💾 Save Marks for All (${students.length})`
+                                        : '💾 Save Marks'}
                             </button>
                         </div>
                     </form>
@@ -209,7 +275,8 @@ const MarksEntry = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Exam ID</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Exam</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Subject</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Marks</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Grade</th>
@@ -218,6 +285,7 @@ const MarksEntry = () => {
                         <tbody>
                             {results.map((r) => (
                                 <tr key={r.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '16px 24px', color: '#718096' }}>Roll {r.student_roll || '-'}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{r.exam_id}</td>
                                     <td style={{ padding: '16px 24px', color: '#718096' }}>#{r.subject_id}</td>
                                     <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{r.marks_obtained}</td>
