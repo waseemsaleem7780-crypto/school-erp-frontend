@@ -10,7 +10,7 @@ const TeacherHomework = () => {
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
-        student_id: '',
+        student_id: 'all',
         teacher_id: '',
         title: '',
         description: '',
@@ -41,18 +41,30 @@ const TeacherHomework = () => {
         }
     };
 
+    // ✅ Sahi endpoint — /subjects/class/{class_id}
     const fetchSubjects = async (classId) => {
         try {
-            const res = await api.get(`/subjects/${classId}`);
+            let res;
+            try {
+                res = await api.get(`/subjects/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/subjects/${classId}`);
+            }
             setSubjects(res.data);
         } catch (err) {
             setSubjects([]);
         }
     };
 
+    // ✅ Sahi endpoint — /students/class/{class_id}
     const fetchStudents = async (classId) => {
         try {
-            const res = await api.get(`/students/${classId}`);
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
             setStudents(res.data);
         } catch (err) {
             setStudents([]);
@@ -74,19 +86,31 @@ const TeacherHomework = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
+        // ✅ "All Students" select — saare students ko homework
+        const targetStudentIds = form.student_id === 'all'
+            ? students.map(s => s.id)
+            : [parseInt(form.student_id)];
+
         try {
-            await api.post('/homework/', {
-                student_id: parseInt(form.student_id),
-                subject_id: parseInt(form.subject_id),
-                teacher_id: parseInt(form.teacher_id),
-                title: form.title,
-                description: form.description,
-                deadline: form.deadline,
+            for (const studentId of targetStudentIds) {
+                await api.post('/homework/', {
+                    student_id: studentId,
+                    subject_id: parseInt(form.subject_id),
+                    teacher_id: parseInt(form.teacher_id),
+                    title: form.title,
+                    description: form.description,
+                    deadline: form.deadline,
+                });
+            }
+
+            setMessage({
+                type: 'success',
+                text: form.student_id === 'all'
+                    ? `Homework assigned to ${targetStudentIds.length} students! ✅`
+                    : 'Homework assigned! ✅'
             });
-            setMessage({ type: 'success', text: 'Homework assigned! ✅' });
             setForm({ ...form, title: '', description: '', deadline: '' });
             setShowForm(false);
-            if (form.student_id) fetchHomework(form.student_id);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to add homework' });
@@ -144,7 +168,7 @@ const TeacherHomework = () => {
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
                                 <option value="">Select Class</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
@@ -156,12 +180,16 @@ const TeacherHomework = () => {
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
+                            {form.class_id && subjects.length === 0 && (
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found</p>
+                            )}
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
                             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Student</option>
+                                {/* ✅ All Students option */}
+                                <option value="all">📚 All Students (Poori Class)</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
