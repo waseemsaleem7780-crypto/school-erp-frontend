@@ -1,13 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 
 const AuthContext = createContext();
 
-// ✅ JWT decode function
 const decodeToken = (token) => {
     try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload;
+        return JSON.parse(atob(token.split('.')[1]));
     } catch (err) {
         return null;
     }
@@ -18,71 +16,77 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
-    // ✅ Page load / refresh par — backend se user verify karo
+    const loadUser = useCallback(async () => {
+        const storedToken = localStorage.getItem('token');
+
+        if (!storedToken) {
+            setUser(null);
+            setToken(null);
+            setLoading(false);
+            return;
+        }
+
+        const payload = decodeToken(storedToken);
+        if (!payload) {
+            localStorage.removeItem('token');
+            setUser(null);
+            setToken(null);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const res = await api.get('/auth/me');
+            setUser({
+                id: res.data.id,
+                email: res.data.email,
+                full_name: res.data.full_name,
+                role: res.data.role,
+                school_id: res.data.school_id,
+                student_id: res.data.student_id,
+                teacher_id: res.data.teacher_id,
+            });
+            setToken(storedToken);
+        } catch (err) {
+            console.error('User verification failed:', err);
+            localStorage.removeItem('token');
+            setUser(null);
+            setToken(null);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // ✅ Initial load
     useEffect(() => {
-        const verifyUser = async () => {
-            const storedToken = localStorage.getItem('token');
+        loadUser();
+    }, [loadUser]);
 
-            if (!storedToken) {
-                setUser(null);
-                setToken(null);
-                setLoading(false);
-                return;
-            }
-
-            // Token format check
-            const payload = decodeToken(storedToken);
-            if (!payload) {
-                localStorage.removeItem('token');
-                setUser(null);
-                setToken(null);
-                setLoading(false);
-                return;
-            }
-
-            try {
-                // ✅ Backend se actual user info lo
-                const res = await api.get('/auth/me');
-                setUser({
-                    id: res.data.id,
-                    email: res.data.email,
-                    full_name: res.data.full_name,
-                    role: res.data.role,
-                    school_id: res.data.school_id,
-                    student_id: res.data.student_id,
-                    teacher_id: res.data.teacher_id,
-                });
-                setToken(storedToken);
-            } catch (err) {
-                console.error('User verification failed:', err);
-                localStorage.removeItem('token');
-                setUser(null);
-                setToken(null);
-            } finally {
-                setLoading(false);
+    // ✅ Cross-tab sync — dusri tab mein login/logout hua to yahan bhi update ho
+    useEffect(() => {
+        const handleStorage = (e) => {
+            if (e.key === 'token') {
+                loadUser();
             }
         };
-
-        verifyUser();
-    }, []);
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, [loadUser]);
 
     const login = async (email, password) => {
         try {
-            // ✅ Pehle purana data saaf karo
             localStorage.removeItem('token');
             setUser(null);
             setToken(null);
 
             const response = await api.post('/auth/login', { email, password });
-            const { access_token, role, school_slug, user_name } = response.data;
+            const { access_token, role, user_name } = response.data;
 
             localStorage.setItem('token', access_token);
             setToken(access_token);
 
-            // ✅ Token decode — user info set karo
             const payload = decodeToken(access_token);
 
-            // ✅ Backend se full user info lo
             try {
                 const meRes = await api.get('/auth/me');
                 setUser({
@@ -95,7 +99,6 @@ export const AuthProvider = ({ children }) => {
                     teacher_id: meRes.data.teacher_id,
                 });
             } catch {
-                // Fallback — token se
                 setUser({
                     id: payload?.user_id || payload?.id,
                     email: email,
@@ -115,7 +118,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        // ✅ Saara data saaf karo
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('role');
