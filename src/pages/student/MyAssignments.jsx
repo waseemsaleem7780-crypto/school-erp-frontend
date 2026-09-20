@@ -11,9 +11,15 @@ const MyAssignments = () => {
 
     const fetchAssignments = async () => {
         try {
-            const res = await api.get('/assignment/student/1');
+            // ✅ Pehle current user ka student_id dhundo
+            const meRes = await api.get('/auth/me');
+            const studentId = meRes.data.student_id || meRes.data.id;
+
+            // ✅ Phir us student ki assignments
+            const res = await api.get(`/assignment/student/${studentId}`);
             setAssignments(res.data);
         } catch (err) {
+            console.error('Assignments fetch failed:', err);
             setAssignments([]);
         } finally {
             setLoading(false);
@@ -21,15 +27,6 @@ const MyAssignments = () => {
     };
 
     const isOverdue = (deadline) => new Date(deadline) < new Date();
-
-    const getFileIcon = (url) => {
-        if (!url) return '📄';
-        const ext = url.split('.').pop().toLowerCase();
-        if (ext === 'pdf') return '📕';
-        if (['jpg', 'jpeg', 'png'].includes(ext)) return '🖼️';
-        if (['doc', 'docx'].includes(ext)) return '📘';
-        return '📄';
-    };
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
@@ -75,13 +72,12 @@ const MyAssignments = () => {
                             <p style={{ color: '#718096', margin: '8px 0', fontSize: '14px', lineHeight: '1.6' }}>
                                 {a.description}
                             </p>
-                            
-                            {/* Download Button (agar file hai) */}
+
                             {a.file_path && (
-                                <a 
-                                    href={a.file_path} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
+                                <a
+                                    href={a.file_path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     style={{
                                         display: 'inline-block',
                                         marginTop: '12px',

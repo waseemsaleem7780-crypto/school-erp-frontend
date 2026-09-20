@@ -14,7 +14,7 @@ const TeacherAssignments = () => {
     const [form, setForm] = useState({
         class_id: '',
         subject_id: '',
-        student_id: '',
+        student_id: 'all',   // ✅ Default: All Students
         teacher_id: '',
         title: '',
         description: '',
@@ -60,7 +60,6 @@ const TeacherAssignments = () => {
 
     const fetchSubjects = async (classId) => {
         try {
-            // ✅ Try both endpoints
             let res;
             try {
                 res = await api.get(`/subjects/class/${classId}`);
@@ -69,14 +68,12 @@ const TeacherAssignments = () => {
             }
             setSubjects(res.data);
         } catch (err) {
-            console.error('Subjects fetch failed:', err);
             setSubjects([]);
         }
     };
 
     const fetchStudents = async (classId) => {
         try {
-            // ✅ Try both endpoints
             let res;
             try {
                 res = await api.get(`/students/class/${classId}`);
@@ -85,7 +82,6 @@ const TeacherAssignments = () => {
             }
             setStudents(res.data);
         } catch (err) {
-            console.error('Students fetch failed:', err);
             setStudents([]);
         }
     };
@@ -133,7 +129,7 @@ const TeacherAssignments = () => {
         setForm({
             class_id: '',
             subject_id: '',
-            student_id: assignment.student_id,
+            student_id: assignment.student_id || 'all',
             teacher_id: assignment.teacher_id,
             title: assignment.title,
             description: assignment.description,
@@ -163,10 +159,15 @@ const TeacherAssignments = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
+        // ✅ Agar "All Students" select — to saare students ko assignment bhejo
+        const targetStudentIds = form.student_id === 'all'
+            ? students.map(s => s.id)
+            : [parseInt(form.student_id)];
+
         try {
             if (editingId) {
                 await api.put(`/assignment/${editingId}`, {
-                    student_id: parseInt(form.student_id),
+                    student_id: targetStudentIds[0],
                     subject_id: parseInt(form.subject_id) || 1,
                     teacher_id: parseInt(form.teacher_id),
                     title: form.title,
@@ -176,16 +177,24 @@ const TeacherAssignments = () => {
                 });
                 setMessage({ type: 'success', text: 'Assignment updated! ✅' });
             } else {
-                await api.post('/assignment/', {
-                    student_id: parseInt(form.student_id),
-                    subject_id: parseInt(form.subject_id),
-                    teacher_id: parseInt(form.teacher_id),
-                    title: form.title,
-                    description: form.description,
-                    deadline: form.deadline,
-                    file_path: form.file_url,
+                // ✅ Har student ke liye alag assignment banao
+                for (const studentId of targetStudentIds) {
+                    await api.post('/assignment/', {
+                        student_id: studentId,
+                        subject_id: parseInt(form.subject_id),
+                        teacher_id: parseInt(form.teacher_id),
+                        title: form.title,
+                        description: form.description,
+                        deadline: form.deadline,
+                        file_path: form.file_url,
+                    });
+                }
+                setMessage({ 
+                    type: 'success', 
+                    text: form.student_id === 'all' 
+                        ? `Assignment sent to ${targetStudentIds.length} students! ✅`
+                        : 'Assignment saved! ✅'
                 });
-                setMessage({ type: 'success', text: 'Assignment saved! ✅' });
             }
 
             setForm({ ...form, title: '', description: '', deadline: '', file: null, file_url: '' });
@@ -204,7 +213,7 @@ const TeacherAssignments = () => {
         setShowForm(false);
         setEditingId(null);
         setForm({
-            class_id: '', subject_id: '', student_id: '', teacher_id: '',
+            class_id: '', subject_id: '', student_id: 'all', teacher_id: '',
             title: '', description: '', deadline: '', file: null, file_url: '',
         });
     };
@@ -260,7 +269,7 @@ const TeacherAssignments = () => {
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}>
+                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
                                 <option value="">Select Class</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
@@ -272,20 +281,15 @@ const TeacherAssignments = () => {
                                 <option value="">Select Subject</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
-                            {form.class_id && subjects.length === 0 && (
-                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found for this class</p>
-                            )}
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
                             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Student</option>
+                                {/* ✅ "All Students" option */}
+                                <option value="all">📚 All Students (Poori Class)</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
-                            {form.class_id && students.length === 0 && (
-                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No students found for this class</p>
-                            )}
                         </div>
 
                         <div>
@@ -348,10 +352,21 @@ const TeacherAssignments = () => {
                                     </button>
                                 )}
                             </div>
+                            {/* ✅ File URL Link */}
                             {form.file_url && (
-                                <p style={{ fontSize: '12px', color: '#22543d', marginTop: '8px', fontWeight: '600' }}>
-                                    ✅ File ready hai
-                                </p>
+                                <div style={{ marginTop: '8px' }}>
+                                    <p style={{ fontSize: '12px', color: '#22543d', fontWeight: '600', margin: '0 0 4px 0' }}>
+                                        ✅ File ready hai
+                                    </p>
+                                    <a 
+                                        href={form.file_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        style={{ fontSize: '12px', color: '#667eea', textDecoration: 'underline' }}
+                                    >
+                                        📎 View File
+                                    </a>
+                                </div>
                             )}
                         </div>
 
