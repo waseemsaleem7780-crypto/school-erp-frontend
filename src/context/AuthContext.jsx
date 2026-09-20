@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
+import {
+    saveToken,
+    getToken,
+    clearToken,
+    detectRoleFromUrl,
+    getActiveRole,
+} from '../utils/authStorage';
 
 const AuthContext = createContext();
 
@@ -13,22 +20,25 @@ const decodeToken = (token) => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [token, setToken] = useState(getToken());
     const [loading, setLoading] = useState(true);
 
+    // ═══════════════════════════════════════════
+    //  Load user from backend
+    // ═══════════════════════════════════════════
     const loadUser = useCallback(async () => {
-        const storedToken = localStorage.getItem('token');
+        const activeToken = getToken();
 
-        if (!storedToken) {
+        if (!activeToken) {
             setUser(null);
             setToken(null);
             setLoading(false);
             return;
         }
 
-        const payload = decodeToken(storedToken);
+        const payload = decodeToken(activeToken);
         if (!payload) {
-            localStorage.removeItem('token');
+            clearToken();
             setUser(null);
             setToken(null);
             setLoading(false);
@@ -43,13 +53,13 @@ export const AuthProvider = ({ children }) => {
                 full_name: res.data.full_name,
                 role: res.data.role,
                 school_id: res.data.school_id,
+                school_slug: res.data.school_slug,
                 student_id: res.data.student_id,
                 teacher_id: res.data.teacher_id,
             });
-            setToken(storedToken);
+            setToken(activeToken);
         } catch (err) {
             console.error('User verification failed:', err);
-            localStorage.removeItem('token');
             setUser(null);
             setToken(null);
         } finally {
@@ -62,10 +72,10 @@ export const AuthProvider = ({ children }) => {
         loadUser();
     }, [loadUser]);
 
-    // ✅ Cross-tab sync — dusri tab mein login/logout hua to yahan bhi update ho
+    // ✅ Cross-tab sync
     useEffect(() => {
         const handleStorage = (e) => {
-            if (e.key === 'token') {
+            if (e.key && e.key.startsWith('token')) {
                 loadUser();
             }
         };
@@ -73,16 +83,19 @@ export const AuthProvider = ({ children }) => {
         return () => window.removeEventListener('storage', handleStorage);
     }, [loadUser]);
 
+    // ═══════════════════════════════════════════
+    //  Login
+    // ═══════════════════════════════════════════
     const login = async (email, password) => {
         try {
-            localStorage.removeItem('token');
             setUser(null);
             setToken(null);
 
             const response = await api.post('/auth/login', { email, password });
             const { access_token, role, user_name } = response.data;
 
-            localStorage.setItem('token', access_token);
+            // ✅ Role-specific token save karo
+            saveToken(role, access_token);
             setToken(access_token);
 
             const payload = decodeToken(access_token);
@@ -95,6 +108,7 @@ export const AuthProvider = ({ children }) => {
                     full_name: meRes.data.full_name,
                     role: meRes.data.role,
                     school_id: meRes.data.school_id,
+                    school_slug: meRes.data.school_slug,
                     student_id: meRes.data.student_id,
                     teacher_id: meRes.data.teacher_id,
                 });
@@ -108,7 +122,7 @@ export const AuthProvider = ({ children }) => {
                 });
             }
 
-            return { success: true };
+            return { success: true, role, school_slug: payload?.school_slug };
         } catch (error) {
             return {
                 success: false,
@@ -117,13 +131,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // ═══════════════════════════════════════════
+    //  Logout — sirf current role
+    // ═══════════════════════════════════════════
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('role');
+        const activeRole = getActiveRole();
+        clearToken(activeRole);
         setToken(null);
         setUser(null);
-        window.location.href = '/login';
+
+        const slug = window.location.pathname.split('/').filter(Boolean)[0];
+        const isSlug = slug && !['superadmin', 'admin', 'teacher', 'student', 'login'].includes(slug);
+        window.location.href = isSlug ? `/${slug}/login` : '/login';
     };
 
     return (
