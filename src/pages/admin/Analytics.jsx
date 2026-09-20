@@ -26,13 +26,18 @@ const Analytics = () => {
                 api.get('/analytics/top-students'),
                 api.get('/analytics/defaulters'),
             ]);
-            setAttendanceTrend(attRes.data);
-            setFeeCollection(feeRes.data);
-            setTopStudents(topRes.data);
-            setDefaulters(defRes.data);
+
+            setAttendanceTrend(Array.isArray(attRes.data) ? attRes.data : []);
+            setFeeCollection(Array.isArray(feeRes.data) ? feeRes.data : []);
+            setTopStudents(Array.isArray(topRes.data) ? topRes.data : []);
+            setDefaulters(Array.isArray(defRes.data) ? defRes.data : []);
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.detail || 'Failed to load analytics');
+            setAttendanceTrend([]);
+            setFeeCollection([]);
+            setTopStudents([]);
+            setDefaulters([]);
         } finally {
             setLoading(false);
         }
@@ -83,7 +88,6 @@ const Analytics = () => {
             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
             minHeight: '100vh',
         }}>
-            {/* Header */}
             <div style={{ marginBottom: '35px' }}>
                 <h1 style={{
                     fontSize: '36px',
@@ -113,29 +117,18 @@ const Analytics = () => {
                     📈 Attendance Trend (Last 6 Months)
                 </h2>
                 {attendanceTrend.length === 0 ? (
-                    <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No data yet</p>
+                    <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>
+                        📭 No attendance data yet — mark attendance to see trends
+                    </p>
                 ) : (
                     <ResponsiveContainer width="100%" height={320}>
                         <LineChart data={attendanceTrend}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                             <XAxis dataKey="month" stroke="#718096" />
                             <YAxis stroke="#718096" domain={[0, 100]} />
-                            <Tooltip
-                                contentStyle={{
-                                    background: 'white',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '12px',
-                                }}
-                            />
+                            <Tooltip contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
                             <Legend />
-                            <Line
-                                type="monotone"
-                                dataKey="percentage"
-                                stroke="#667eea"
-                                strokeWidth={3}
-                                dot={{ fill: '#667eea', r: 6 }}
-                                name="Attendance %"
-                            />
+                            <Line type="monotone" dataKey="percentage" stroke="#667eea" strokeWidth={3} dot={{ fill: '#667eea', r: 6 }} name="Attendance %" />
                         </LineChart>
                     </ResponsiveContainer>
                 )}
@@ -153,21 +146,16 @@ const Analytics = () => {
                     💰 Fee Collection (Last 6 Months)
                 </h2>
                 {feeCollection.length === 0 ? (
-                    <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No data yet</p>
+                    <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>
+                        📭 No fee collection data yet — collect fees to see trends
+                    </p>
                 ) : (
                     <ResponsiveContainer width="100%" height={320}>
                         <BarChart data={feeCollection}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                             <XAxis dataKey="month" stroke="#718096" />
                             <YAxis stroke="#718096" />
-                            <Tooltip
-                                contentStyle={{
-                                    background: 'white',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '12px',
-                                }}
-                                formatter={(value) => `Rs. ${value}`}
-                            />
+                            <Tooltip contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px' }} formatter={(value) => `Rs. ${value}`} />
                             <Legend />
                             <Bar dataKey="total" fill="#48bb78" radius={[8, 8, 0, 0]} name="Amount (Rs.)" />
                         </BarChart>
@@ -193,7 +181,9 @@ const Analytics = () => {
                     </h2>
                 </div>
                 {topStudents.length === 0 ? (
-                    <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No data yet</p>
+                    <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>
+                        📭 No attendance records yet
+                    </p>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
@@ -211,13 +201,9 @@ const Analytics = () => {
                                     <td style={{ padding: '16px 28px', fontSize: '24px' }}>
                                         {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                                     </td>
-                                    <td style={{ padding: '16px 28px', color: '#1a202c', fontWeight: '600' }}>
-                                        {s.student_name}
-                                    </td>
+                                    <td style={{ padding: '16px 28px', color: '#1a202c', fontWeight: '600' }}>{s.student_name}</td>
                                     <td style={{ padding: '16px 28px', color: '#718096' }}>{s.roll_number}</td>
-                                    <td style={{ padding: '16px 28px', color: '#718096' }}>
-                                        {s.present_days} / {s.total_days}
-                                    </td>
+                                    <td style={{ padding: '16px 28px', color: '#718096' }}>{s.present_days} / {s.total_days}</td>
                                     <td style={{ padding: '16px 28px' }}>
                                         <span style={{
                                             padding: '6px 14px',
