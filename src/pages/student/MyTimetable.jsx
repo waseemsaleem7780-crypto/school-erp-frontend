@@ -4,6 +4,7 @@ import api from '../../api/axios';
 const MyTimetable = () => {
     const [timetable, setTimetable] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -13,14 +14,51 @@ const MyTimetable = () => {
 
     const fetchTimetable = async () => {
         try {
-            const res = await api.get('/timetable/class/1');
-            setTimetable(res.data);
+            // Step 1: Student ki info lo
+            const meRes = await api.get('/auth/me');
+            const classId = meRes.data.class_id;
+
+            if (!classId) {
+                setError('Aap ki class assign nahi hui');
+                setLoading(false);
+                return;
+            }
+
+            // Step 2: Us class ki timetable lo
+            const res = await api.get(`/timetable/class/${classId}`);
+            const data = Array.isArray(res.data) ? res.data : [];
+            setTimetable(data);
         } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.detail || 'Failed to load timetable');
             setTimetable([]);
         } finally {
             setLoading(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
+                Loading timetable...
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{ padding: '40px' }}>
+                <div style={{
+                    padding: '20px 24px',
+                    borderRadius: '12px',
+                    background: '#fed7d7',
+                    color: '#c53030',
+                }}>
+                    ⚠️ {error}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
@@ -33,9 +71,7 @@ const MyTimetable = () => {
                 </p>
             </div>
 
-            {loading ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>Loading...</div>
-            ) : timetable.length === 0 ? (
+            {timetable.length === 0 ? (
                 <div style={{
                     backgroundColor: 'white',
                     borderRadius: '16px',
@@ -45,6 +81,9 @@ const MyTimetable = () => {
                 }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>🕐</div>
                     <p style={{ color: '#718096' }}>No timetable yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Admin ne abhi tak aap ki class ka timetable add nahi kiya
+                    </p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '16px' }}>
@@ -76,10 +115,10 @@ const MyTimetable = () => {
                                         }}>
                                             <div>
                                                 <p style={{ margin: 0, color: '#1a202c', fontWeight: '600' }}>
-                                                    Subject #{entry.subject_id}
+                                                    {entry.subject_name || `Subject #${entry.subject_id}`}
                                                 </p>
                                                 <p style={{ margin: '4px 0 0 0', color: '#718096', fontSize: '13px' }}>
-                                                    Teacher #{entry.teacher_id}
+                                                    👨‍🏫 {entry.teacher_name || `Teacher #${entry.teacher_id}`}
                                                 </p>
                                             </div>
                                             <span style={{
