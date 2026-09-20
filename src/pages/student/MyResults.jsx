@@ -12,17 +12,17 @@ const MyResults = () => {
 
     const fetchResults = async () => {
         try {
-            // Step 1: Student ID lo
+            // ✅ Step 1: Login wale student ki asli ID lo
             const meRes = await api.get('/auth/me');
             const studentId = meRes.data.student_id;
 
             if (!studentId) {
-                setError('Student ID not found');
+                setError('Student profile not linked. Please contact admin.');
                 setLoading(false);
                 return;
             }
 
-            // Step 2: Us student ke results lo
+            // ✅ Step 2: Sirf usi student ke results lo
             const res = await api.get(`/results/student/${studentId}`);
             const data = Array.isArray(res.data) ? res.data : [];
             setResults(data);
