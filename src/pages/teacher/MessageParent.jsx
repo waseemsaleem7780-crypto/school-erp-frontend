@@ -58,6 +58,12 @@ const MessageParent = () => {
     };
 
     const handleStudentChange = (studentId) => {
+        if (studentId === 'all') {
+            setSelectedStudent({ id: 'all', is_all: true });
+            setParentPhone('');
+            setParentName('');
+            return;
+        }
         const student = students.find(s => String(s.id) === String(studentId));
         setSelectedStudent(student);
         setParentPhone(student?.parent_phone || '');
@@ -67,16 +73,39 @@ const MessageParent = () => {
     const handleSend = async (e) => {
         e.preventDefault();
         if (!selectedStudent) return;
-        if (!window.confirm(`Send to ${parentName || 'parent'}?`)) return;
+
+        const isAll = selectedStudent.is_all;
+        const confirmMsg = isAll
+            ? `Poori class ke ${students.length} parents ko message bhejna hai?`
+            : `Send to ${parentName || 'parent'}?`;
+
+        if (!window.confirm(confirmMsg)) return;
 
         setSending(true);
         try {
-            await api.post('/teacher-message/send', {
-                student_id: selectedStudent.id,
-                message
-            });
-            alert('✅ Message sent!');
+            const payload = isAll
+                ? {
+                    send_to_all: true,
+                    class_id: parseInt(selectedClass),
+                    section_id: selectedSection ? parseInt(selectedSection) : null,
+                    message,
+                }
+                : {
+                    student_id: selectedStudent.id,
+                    message,
+                };
+
+            const res = await api.post('/teacher-message/send', payload);
+
+            if (isAll) {
+                alert(`✅ ${res.data.sent_count}/${res.data.total} parents ko message bhej diya! (${res.data.failed_count} failed)`);
+            } else {
+                alert('✅ Message sent!');
+            }
             setMessage('');
+            setSelectedStudent(null);
+            setParentPhone('');
+            setParentName('');
         } catch (error) {
             alert('❌ Failed: ' + (error.response?.data?.detail || error.message));
         } finally {
@@ -127,6 +156,10 @@ const MessageParent = () => {
                             <label style={labelStyle}>Student (Roll No)</label>
                             <select onChange={(e) => handleStudentChange(e.target.value)} style={inputStyle} required>
                                 <option value="">Select Student</option>
+                                {/* ✅ All Students option */}
+                                <option value="all" style={{ fontWeight: 'bold', color: '#667eea' }}>
+                                    📢 All Students ({students.length})
+                                </option>
                                 {students.map(s => (
                                     <option key={s.id} value={s.id}>Roll #{s.roll_number} - {s.student_name}</option>
                                 ))}
@@ -134,7 +167,7 @@ const MessageParent = () => {
                         </>
                     )}
 
-                    {parentPhone && (
+                    {parentPhone && !selectedStudent?.is_all && (
                         <>
                             <label style={labelStyle}>Parent WhatsApp (Auto-filled)</label>
                             <input type="text" value={parentPhone} readOnly style={{ ...inputStyle, backgroundColor: '#f0fff4', borderColor: '#9ae6b4', fontWeight: '600', color: '#22543d' }} />
@@ -142,6 +175,12 @@ const MessageParent = () => {
                                 Parent: {parentName || 'N/A'}
                             </p>
                         </>
+                    )}
+
+                    {selectedStudent?.is_all && (
+                        <div style={{ padding: '14px', borderRadius: '10px', background: '#ebf8ff', color: '#2c5282', marginBottom: '16px', fontSize: '14px', fontWeight: '600' }}>
+                            📢 Poori class ke <strong>{students.length} parents</strong> ko message jayega
+                        </div>
                     )}
 
                     {selectedStudent && (
@@ -152,7 +191,11 @@ const MessageParent = () => {
                     )}
 
                     <button type="submit" disabled={sending || !selectedStudent} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: sending ? '#a0aec0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: sending ? 'not-allowed' : 'pointer', width: '100%' }}>
-                        {sending ? 'Sending...' : '🚀 Send WhatsApp'}
+                        {sending
+                            ? 'Sending...'
+                            : selectedStudent?.is_all
+                                ? `📢 Send to All (${students.length})`
+                                : '🚀 Send WhatsApp'}
                     </button>
                 </form>
             </div>
