@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const MyTimetable = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [timetable, setTimetable] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -18,7 +20,7 @@ const MyTimetable = () => {
             const classId = meRes.data.class_id;
 
             if (!classId) {
-                setError('Aap ki class assign nahi hui');
+                setError(`Aap ki ${t.class.toLowerCase()} assign nahi hui`);
                 setLoading(false);
                 return;
             }
@@ -28,7 +30,7 @@ const MyTimetable = () => {
             setTimetable(data);
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.detail || 'Failed to load timetable');
+            setError(err.response?.data?.detail || `Failed to load ${t.timetable.toLowerCase()}`);
             setTimetable([]);
         } finally {
             setLoading(false);
@@ -38,7 +40,7 @@ const MyTimetable = () => {
     if (loading) {
         return (
             <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
-                Loading timetable...
+                Loading {t.timetable.toLowerCase()}...
             </div>
         );
     }
@@ -62,10 +64,10 @@ const MyTimetable = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ marginBottom: '30px' }}>
                 <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>
-                    My Timetable
+                    My {t.timetable}
                 </h1>
                 <p style={{ color: '#718096', margin: 0 }}>
-                    Your class schedule
+                    Your {t.class.toLowerCase()} schedule
                 </p>
             </div>
 
@@ -78,9 +80,9 @@ const MyTimetable = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>🕐</div>
-                    <p style={{ color: '#718096' }}>No timetable yet</p>
+                    <p style={{ color: '#718096' }}>No {t.timetable.toLowerCase()} yet</p>
                     <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
-                        Admin ne abhi tak aap ki class ka timetable add nahi kiya
+                        Admin ne abhi tak aap ki {t.class.toLowerCase()} ka {t.timetable.toLowerCase()} add nahi kiya
                     </p>
                 </div>
             ) : (
@@ -113,10 +115,10 @@ const MyTimetable = () => {
                                         }}>
                                             <div>
                                                 <p style={{ margin: 0, color: '#1a202c', fontWeight: '600' }}>
-                                                    {entry.subject_name || `Subject #${entry.subject_id}`}
+                                                    {entry.subject_name || `${t.subject} #${entry.subject_id}`}
                                                 </p>
                                                 <p style={{ margin: '4px 0 0 0', color: '#718096', fontSize: '13px' }}>
-                                                    👨‍🏫 {entry.teacher_name || `Teacher #${entry.teacher_id}`}
+                                                    👨‍🏫 {entry.teacher_name || `${t.teacher} #${entry.teacher_id}`}
                                                 </p>
                                             </div>
                                             <span style={{

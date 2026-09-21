@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const MyClasses = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -24,10 +26,10 @@ const MyClasses = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ marginBottom: '30px' }}>
                 <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>
-                    My Classes
+                    My {t.classes}
                 </h1>
                 <p style={{ color: '#718096', margin: 0 }}>
-                    Classes assigned to you
+                    {t.classes} assigned to you
                 </p>
             </div>
 
@@ -44,7 +46,7 @@ const MyClasses = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
-                    <p style={{ color: '#718096' }}>No classes assigned yet</p>
+                    <p style={{ color: '#718096' }}>No {t.classes.toLowerCase()} assigned yet</p>
                 </div>
             ) : (
                 <div style={{
@@ -66,7 +68,7 @@ const MyClasses = () => {
                             <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏫</div>
                             <h3 style={{ margin: '0 0 8px 0', color: '#1a202c' }}>{c.name}</h3>
                             <p style={{ color: '#718096', fontSize: '13px', margin: 0 }}>
-                                Class ID: #{c.id}
+                                {t.class} ID: #{c.id}
                             </p>
                         </div>
                     ))}

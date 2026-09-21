@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const Homework = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [classes, setClasses] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [students, setStudents] = useState([]);
@@ -23,18 +25,17 @@ const Homework = () => {
 
     const fetchData = async () => {
         try {
-            const [c, t] = await Promise.all([
+            const [c, tch] = await Promise.all([
                 api.get('/classes/'),
                 api.get('/teachers/')
             ]);
             setClasses(c.data);
-            setTeachers(t.data);
+            setTeachers(tch.data);
         } catch (err) {
             console.error(err);
         }
     };
 
-    // ✅ Sahi endpoint — /subjects/class/{class_id}
     const fetchSubjects = async (classId) => {
         if (!classId) { setSubjects([]); return; }
         try {
@@ -50,7 +51,6 @@ const Homework = () => {
         }
     };
 
-    // ✅ Sahi endpoint — /students/class/{class_id}
     const fetchStudents = async (classId) => {
         if (!classId) { setStudents([]); return; }
         try {
@@ -98,7 +98,6 @@ const Homework = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
-        // ✅ "All Students" select — saare students ko homework
         const targetStudentIds = form.student_id === 'all'
             ? students.map(s => s.id)
             : [parseInt(form.student_id)];
@@ -119,15 +118,15 @@ const Homework = () => {
             setMessage({
                 type: 'success',
                 text: form.student_id === 'all'
-                    ? `Homework assigned to ${targetStudentIds.length} students! ✅`
-                    : 'Homework assigned! ✅'
+                    ? `${t.homework} assigned to ${targetStudentIds.length} ${t.students.toLowerCase()}! ✅`
+                    : `${t.homework} assigned! ✅`
             });
             setShowForm(false);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to add homework'
+                text: error.response?.data?.detail || `Failed to add ${t.homework.toLowerCase()}`
             });
         } finally {
             setLoading(false);
@@ -138,8 +137,8 @@ const Homework = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Homework</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Assign homework to students</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.homework}</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Assign {t.homework.toLowerCase()} to {t.students.toLowerCase()}</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
@@ -150,7 +149,7 @@ const Homework = () => {
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Assign Homework'}
+                    {showForm ? '✕ Cancel' : `+ Assign ${t.homework}`}
                 </button>
             </div>
 
@@ -172,27 +171,27 @@ const Homework = () => {
                     marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                     border: '2px solid #e2e8f0',
                 }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Assign New Homework</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Assign New {t.homework}</h3>
                     <form onSubmit={handleSubmit} style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '16px',
                     }}>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
                             <select
                                 value={form.class_id}
                                 onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })}
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                 required
                             >
-                                <option value="">Select Class</option>
+                                <option value="">Select {t.class}</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
                             <select
                                 value={form.subject_id}
                                 onChange={(e) => setForm({ ...form, subject_id: e.target.value })}
@@ -200,16 +199,16 @@ const Homework = () => {
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
                                 required
                             >
-                                <option value="">Select Subject</option>
+                                <option value="">Select {t.subject}</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                             {form.class_id && subjects.length === 0 && (
-                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No subjects found</p>
+                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>No {t.subjects.toLowerCase()} found</p>
                             )}
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
                             <select
                                 value={form.student_id}
                                 onChange={(e) => setForm({ ...form, student_id: e.target.value })}
@@ -217,22 +216,21 @@ const Homework = () => {
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
                                 required
                             >
-                                {/* ✅ All Students option */}
-                                <option value="all">📚 All Students (Poori Class)</option>
+                                <option value="all">📚 All {t.students} (Poori {t.class})</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Teacher</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.teacher}</label>
                             <select
                                 value={form.teacher_id}
                                 onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                 required
                             >
-                                <option value="">Select Teacher</option>
-                                {teachers.map((t) => <option key={t.id} value={t.id}>{t.qualification} (ID: {t.id})</option>)}
+                                <option value="">Select {t.teacher}</option>
+                                {teachers.map((tch) => <option key={tch.id} value={tch.id}>{tch.qualification} (ID: {tch.id})</option>)}
                             </select>
                         </div>
 
@@ -282,7 +280,7 @@ const Homework = () => {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
-                                {loading ? 'Saving...' : '💾 Assign Homework'}
+                                {loading ? 'Saving...' : `💾 Assign ${t.homework}`}
                             </button>
                         </div>
                     </form>
@@ -291,12 +289,12 @@ const Homework = () => {
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>Homework List ({homework.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>{t.homework} List ({homework.length})</h3>
                 </div>
                 {homework.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📝</div>
-                        <p style={{ color: '#718096' }}>Select a student to view homework</p>
+                        <p style={{ color: '#718096' }}>Select a {t.student.toLowerCase()} to view {t.homework.toLowerCase()}</p>
                     </div>
                 ) : (
                     <div style={{ padding: '24px', display: 'grid', gap: '16px' }}>
@@ -317,7 +315,7 @@ const Homework = () => {
                                 </div>
                                 <p style={{ color: '#718096', margin: '8px 0', fontSize: '14px' }}>{h.description}</p>
                                 <p style={{ color: '#a0aec0', margin: 0, fontSize: '12px' }}>
-                                    Subject ID: {h.subject_id} | Teacher ID: {h.teacher_id}
+                                    {t.subject} ID: {h.subject_id} | {t.teacher} ID: {h.teacher_id}
                                 </p>
                             </div>
                         ))}

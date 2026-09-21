@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { downloadExcel } from '../../utils/exportUtils';
+import { useTerms } from '../../utils/terminology';
 
 const Students = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [students, setStudents] = useState([]);
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
@@ -21,8 +23,8 @@ const Students = () => {
         class_id: '',
         section_id: '',
         phone: '',
-        parent_whatsapp: '',    // ✅ NAYA
-        parent_name: '',        // ✅ NAYA
+        parent_whatsapp: '',
+        parent_name: '',
     });
 
     useEffect(() => {
@@ -77,7 +79,7 @@ const Students = () => {
 
     const getClassName = (classId) => {
         const cls = classes.find((c) => c.id === classId);
-        return cls ? cls.name : `Class #${classId}`;
+        return cls ? cls.name : `${t.class} #${classId}`;
     };
 
     const filteredStudents = students.filter((s) => {
@@ -138,10 +140,10 @@ const Students = () => {
                     email: form.email,
                     phone: form.phone || null,
                     password: form.password || null,
-                    parent_whatsapp: form.parent_whatsapp || null,   // ✅ NAYA
-                    parent_name: form.parent_name || null,           // ✅ NAYA
+                    parent_whatsapp: form.parent_whatsapp || null,
+                    parent_name: form.parent_name || null,
                 });
-                setMessage({ type: 'success', text: 'Student updated! ✅' });
+                setMessage({ type: 'success', text: `${t.student} updated! ✅` });
             } else {
                 await api.post('/students/create-with-user', {
                     full_name: form.full_name,
@@ -151,10 +153,10 @@ const Students = () => {
                     class_id: parseInt(form.class_id),
                     section_id: parseInt(form.section_id),
                     phone: form.phone || null,
-                    parent_whatsapp: form.parent_whatsapp || null,   // ✅ NAYA
-                    parent_name: form.parent_name || null,           // ✅ NAYA
+                    parent_whatsapp: form.parent_whatsapp || null,
+                    parent_name: form.parent_name || null,
                 });
-                setMessage({ type: 'success', text: 'Student created! ✅' });
+                setMessage({ type: 'success', text: `${t.student} created! ✅` });
             }
             setForm({
                 full_name: '', email: '', password: '',
@@ -168,7 +170,7 @@ const Students = () => {
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to save student',
+                text: error.response?.data?.detail || `Failed to save ${t.student}`,
             });
         } finally {
             setLoading(false);
@@ -184,19 +186,19 @@ const Students = () => {
             class_id: student.class_id,
             section_id: student.section_id,
             phone: student.student_phone || '',
-            parent_whatsapp: student.parent_whatsapp || '',   // ✅ NAYA
-            parent_name: student.parent_name || '',           // ✅ NAYA
+            parent_whatsapp: student.parent_whatsapp || '',
+            parent_name: student.parent_name || '',
         });
         setEditingId(student.id);
         setShowForm(true);
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Kya aap waqai ye student delete karna chahte ho?')) return;
+        if (!window.confirm(`Kya aap waqai ye ${t.student} delete karna chahte ho?`)) return;
 
         try {
             await api.delete(`/students/${id}`);
-            setMessage({ type: 'success', text: 'Student deleted! ✅' });
+            setMessage({ type: 'success', text: `${t.student} deleted! ✅` });
             fetchAllStudents();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
@@ -218,8 +220,8 @@ const Students = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Students</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Manage all enrolled students</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.students}</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage all enrolled {t.students.toLowerCase()}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <button
@@ -240,7 +242,7 @@ const Students = () => {
                             border: 'none', borderRadius: '10px', cursor: 'pointer',
                         }}
                     >
-                        {showForm ? '✕ Cancel' : '+ Add Student'}
+                        {showForm ? '✕ Cancel' : `+ Add ${t.student}`}
                     </button>
                 </div>
             </div>
@@ -258,7 +260,7 @@ const Students = () => {
             {showForm && (
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
-                        {editingId ? '✏️ Edit Student' : '➕ Add New Student'}
+                        {editingId ? `✏️ Edit ${t.student}` : `➕ Add New ${t.student}`}
                     </h3>
 
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
@@ -285,17 +287,17 @@ const Students = () => {
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class *</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class} *</label>
                             <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select Class</option>
+                                <option value="">Select {t.class}</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Section *</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.section} *</label>
                             <select value={form.section_id} onChange={(e) => setForm({ ...form, section_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Section</option>
+                                <option value="">Select {t.section}</option>
                                 {sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
@@ -305,7 +307,6 @@ const Students = () => {
                             <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g., +92-300-1234567" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
 
-                        {/* ✅ Parent WhatsApp */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#22543d' }}>
                                 📱 Parent WhatsApp *
@@ -323,7 +324,6 @@ const Students = () => {
                             </p>
                         </div>
 
-                        {/* ✅ Parent Name */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#22543d' }}>
                                 👨‍👦 Parent Name
@@ -339,7 +339,7 @@ const Students = () => {
 
                         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
                             <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                {loading ? 'Saving...' : (editingId ? '💾 Update Student' : '💾 Save Student')}
+                                {loading ? 'Saving...' : (editingId ? `💾 Update ${t.student}` : `💾 Save ${t.student}`)}
                             </button>
                             <button type="button" onClick={handleCancel} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: '#4a5568', background: '#e2e8f0', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
                                 ✕ Cancel
@@ -350,27 +350,27 @@ const Students = () => {
             )}
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔍 Filter Students by Class</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔍 Filter {t.students} by {t.class}</label>
                 <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}>
-                    <option value="">-- All Students --</option>
+                    <option value="">-- All {t.students} --</option>
                     {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
             </div>
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔎 Search Students</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>🔎 Search {t.students}</label>
                 <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, roll number, ID, user ID..." style={{ width: '100%', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>Students List ({filteredStudents.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>{t.students} List ({filteredStudents.length})</h3>
                 </div>
 
                 {filteredStudents.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
-                        <p style={{ color: '#718096' }}>{searchTerm ? 'No students match your search' : 'No students yet'}</p>
+                        <p style={{ color: '#718096' }}>{searchTerm ? `No ${t.students.toLowerCase()} match your search` : `No ${t.students.toLowerCase()} yet`}</p>
                     </div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
@@ -378,10 +378,10 @@ const Students = () => {
                             <thead>
                                 <tr style={{ backgroundColor: '#f7fafc' }}>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Student Name</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.student} Name</th>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Section</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.class}</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.section}</th>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Parent WhatsApp</th>
                                     <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                                 </tr>
@@ -390,7 +390,7 @@ const Students = () => {
                                 {filteredStudents.map((s) => (
                                     <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                         <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
-                                        <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>{s.student_name || `Student #${s.user_id}`}</td>
+                                        <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600' }}>{s.student_name || `${t.student} #${s.user_id}`}</td>
                                         <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '600', fontFamily: 'monospace' }}>{s.roll_number || '—'}</td>
                                         <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
                                         <td style={{ padding: '16px 24px', color: '#718096' }}>{s.section_id || '—'}</td>

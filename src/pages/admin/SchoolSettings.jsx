@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import { getModeIcon, getModeName } from '../../utils/terminology';
 
 const SchoolSettings = () => {
+    const { user } = useAuth();
     const [settings, setSettings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
@@ -51,6 +54,8 @@ const SchoolSettings = () => {
         phone: { label: 'Phone', emoji: '📞' },
     };
 
+    const instituteType = user?.institute_type || 'school';
+
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
@@ -89,6 +94,32 @@ const SchoolSettings = () => {
                     {message.text}
                 </div>
             )}
+
+            {/* ✅ Institute Type (Read-Only) */}
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid #c3dafe',
+                background: 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: '48px' }}>{getModeIcon(instituteType)}</div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '1px' }}>
+                            Institute Mode
+                        </p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '24px', fontWeight: '700', color: '#2d3748' }}>
+                            {getModeName(instituteType)}
+                        </p>
+                        <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#718096' }}>
+                            Mode change karne ke liye Super Admin se contact karo
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             {showForm && (
                 <div style={{

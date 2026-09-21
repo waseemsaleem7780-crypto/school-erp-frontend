@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const MyStudents = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
@@ -32,7 +34,6 @@ const MyStudents = () => {
 
     const fetchSections = async () => {
         try {
-            // Saare sections laao (har class ke liye)
             const res = await api.get('/sections/');
             setSections(res.data);
         } catch (err) {
@@ -50,16 +51,14 @@ const MyStudents = () => {
         }
     };
 
-    // ✅ Class name dhundo
     const getClassName = (classId) => {
         const cls = classes.find(c => String(c.id) === String(classId));
-        return cls ? cls.name : `Class #${classId}`;
+        return cls ? cls.name : `${t.class} #${classId}`;
     };
 
-    // ✅ Section name dhundo
     const getSectionName = (sectionId) => {
         const sec = sections.find(s => String(s.id) === String(sectionId));
-        return sec ? sec.name : `Section #${sectionId}`;
+        return sec ? sec.name : `${t.section} #${sectionId}`;
     };
 
     const filtered = students.filter((s) =>
@@ -70,10 +69,10 @@ const MyStudents = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ marginBottom: '30px' }}>
                 <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>
-                    My Students
+                    My {t.students}
                 </h1>
                 <p style={{ color: '#718096', margin: 0 }}>
-                    View students in your classes
+                    View {t.students.toLowerCase()} in your {t.classes.toLowerCase()}
                 </p>
             </div>
 
@@ -85,7 +84,7 @@ const MyStudents = () => {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
             }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔍 Select Class
+                    🔍 Select {t.class}
                 </label>
                 <select
                     value={selectedClass}
@@ -101,7 +100,7 @@ const MyStudents = () => {
                         backgroundColor: 'white',
                     }}
                 >
-                    <option value="">-- Select Class --</option>
+                    <option value="">-- Select {t.class} --</option>
                     {classes.map((c) => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -142,12 +141,12 @@ const MyStudents = () => {
                 overflow: 'hidden',
             }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>Students ({filtered.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>{t.students} ({filtered.length})</h3>
                 </div>
                 {filtered.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
-                        <p style={{ color: '#718096' }}>No students found</p>
+                        <p style={{ color: '#718096' }}>No {t.students.toLowerCase()} found</p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -155,8 +154,8 @@ const MyStudents = () => {
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Section</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.class}</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.section}</th>
                             </tr>
                         </thead>
                         <tbody>

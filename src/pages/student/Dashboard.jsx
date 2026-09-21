@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const Dashboard = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [stats, setStats] = useState(null);
     const [attendance, setAttendance] = useState([]);
     const [results, setResults] = useState([]);
@@ -38,7 +40,6 @@ const Dashboard = () => {
         ? Math.round((stats.attendance_present / stats.attendance_total) * 100)
         : 0;
 
-    // Loading Skeleton
     if (loading) {
         return (
             <div style={{
@@ -63,10 +64,7 @@ const Dashboard = () => {
 
     if (error) {
         return (
-            <div style={{
-                padding: '40px',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            }}>
+            <div style={{ padding: '40px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
                 <div style={{
                     padding: '20px 24px',
                     borderRadius: '12px',
@@ -80,7 +78,6 @@ const Dashboard = () => {
         );
     }
 
-    // Tab styles
     const tabStyle = (isActive) => ({
         padding: '12px 24px',
         fontSize: '14px',
@@ -101,7 +98,6 @@ const Dashboard = () => {
         gap: '8px',
     });
 
-    // Status badge helper
     const getStatusStyle = (status) => {
         const s = (status || '').toLowerCase();
         if (s === 'present') {
@@ -172,16 +168,10 @@ const Dashboard = () => {
                     position: 'relative',
                     overflow: 'hidden',
                 }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '-20px',
-                        right: '-20px',
-                        fontSize: '100px',
-                        opacity: 0.15,
-                    }}>📋</div>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '100px', opacity: 0.15 }}>📋</div>
                     <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
                     <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Attendance
+                        {t.attendance}
                     </p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '42px', fontWeight: '800' }}>
                         {attendancePercent}%
@@ -201,16 +191,10 @@ const Dashboard = () => {
                     position: 'relative',
                     overflow: 'hidden',
                 }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '-20px',
-                        right: '-20px',
-                        fontSize: '100px',
-                        opacity: 0.15,
-                    }}>📝</div>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '100px', opacity: 0.15 }}>📝</div>
                     <div style={{ fontSize: '40px', marginBottom: '12px' }}>📝</div>
                     <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Homework
+                        {t.homework}
                     </p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '42px', fontWeight: '800' }}>
                         {stats.homework_pending}
@@ -230,22 +214,16 @@ const Dashboard = () => {
                     position: 'relative',
                     overflow: 'hidden',
                 }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '-20px',
-                        right: '-20px',
-                        fontSize: '100px',
-                        opacity: 0.15,
-                    }}>🏆</div>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '100px', opacity: 0.15 }}>🏆</div>
                     <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏆</div>
                     <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Results
+                        {t.results}
                     </p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '42px', fontWeight: '800' }}>
                         {stats.results_count}
                     </p>
                     <p style={{ margin: '6px 0 0 0', fontSize: '12px', opacity: 0.85 }}>
-                        exams appeared
+                        {t.exams.toLowerCase()} appeared
                     </p>
                 </div>
 
@@ -263,16 +241,10 @@ const Dashboard = () => {
                     position: 'relative',
                     overflow: 'hidden',
                 }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '-20px',
-                        right: '-20px',
-                        fontSize: '100px',
-                        opacity: 0.15,
-                    }}>💰</div>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '100px', opacity: 0.15 }}>💰</div>
                     <div style={{ fontSize: '40px', marginBottom: '12px' }}>💰</div>
                     <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Fee Status
+                        {t.fee} Status
                     </p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '22px', fontWeight: '800' }}>
                         {stats.fee_status}
@@ -286,13 +258,13 @@ const Dashboard = () => {
                     📊 Overview
                 </button>
                 <button onClick={() => setActiveTab('attendance')} style={tabStyle(activeTab === 'attendance')}>
-                    📋 Attendance
+                    📋 {t.attendance}
                 </button>
                 <button onClick={() => setActiveTab('results')} style={tabStyle(activeTab === 'results')}>
-                    🏆 Results
+                    🏆 {t.results}
                 </button>
                 <button onClick={() => setActiveTab('fees')} style={tabStyle(activeTab === 'fees')}>
-                    💰 Fees
+                    💰 {t.fees}
                 </button>
             </div>
 
@@ -313,7 +285,7 @@ const Dashboard = () => {
                         alignItems: 'center',
                         gap: '10px',
                     }}>
-                        📊 Attendance Overview
+                        📊 {t.attendance} Overview
                     </h2>
 
                     {/* Progress Bar */}
@@ -410,13 +382,13 @@ const Dashboard = () => {
                         background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
                     }}>
                         <h3 style={{ margin: 0, color: '#1a202c', fontSize: '20px', fontWeight: '700' }}>
-                            📋 Attendance History ({attendance.length})
+                            📋 {t.attendance} History ({attendance.length})
                         </h3>
                     </div>
                     {attendance.length === 0 ? (
                         <div style={{ padding: '80px 20px', textAlign: 'center' }}>
                             <div style={{ fontSize: '72px', marginBottom: '16px' }}>📭</div>
-                            <p style={{ color: '#718096', fontSize: '15px' }}>No attendance records yet</p>
+                            <p style={{ color: '#718096', fontSize: '15px' }}>No {t.attendance.toLowerCase()} records yet</p>
                         </div>
                     ) : (
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -471,20 +443,20 @@ const Dashboard = () => {
                         background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
                     }}>
                         <h3 style={{ margin: 0, color: '#1a202c', fontSize: '20px', fontWeight: '700' }}>
-                            🏆 My Results ({results.length})
+                            🏆 My {t.results} ({results.length})
                         </h3>
                     </div>
                     {results.length === 0 ? (
                         <div style={{ padding: '80px 20px', textAlign: 'center' }}>
                             <div style={{ fontSize: '72px', marginBottom: '16px' }}>📭</div>
-                            <p style={{ color: '#718096', fontSize: '15px' }}>No results yet</p>
+                            <p style={{ color: '#718096', fontSize: '15px' }}>No {t.results.toLowerCase()} yet</p>
                         </div>
                     ) : (
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ background: '#f7fafc' }}>
-                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Subject</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Marks</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>{t.subject}</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>{t.marks}</th>
                                     <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Grade</th>
                                     <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Remarks</th>
                                 </tr>
@@ -493,7 +465,7 @@ const Dashboard = () => {
                                 {results.map((r) => (
                                     <tr key={r.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                                         <td style={{ padding: '16px 28px', color: '#718096' }}>
-                                            📚 Subject #{r.subject_id}
+                                            📚 {t.subject} #{r.subject_id}
                                         </td>
                                         <td style={{ padding: '16px 28px', color: '#1a202c', fontWeight: '700', fontSize: '16px' }}>
                                             {r.marks_obtained}
@@ -533,21 +505,21 @@ const Dashboard = () => {
                         background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
                     }}>
                         <h3 style={{ margin: 0, color: '#1a202c', fontSize: '20px', fontWeight: '700' }}>
-                            💰 Fee Payments ({fees.length})
+                            💰 {t.fee} Payments ({fees.length})
                         </h3>
                     </div>
                     {fees.length === 0 ? (
                         <div style={{ padding: '80px 20px', textAlign: 'center' }}>
                             <div style={{ fontSize: '72px', marginBottom: '16px' }}>📭</div>
-                            <p style={{ color: '#718096', fontSize: '15px' }}>No fee payments yet</p>
+                            <p style={{ color: '#718096', fontSize: '15px' }}>No {t.fee.toLowerCase()} payments yet</p>
                         </div>
                     ) : (
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ background: '#f7fafc' }}>
                                     <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Amount</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Monthly Fee</th>
-                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Yearly Fee</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Monthly {t.fee}</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Yearly {t.fee}</th>
                                 </tr>
                             </thead>
                             <tbody>

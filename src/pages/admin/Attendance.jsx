@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { downloadExcel } from '../../utils/exportUtils';
+import { useTerms } from '../../utils/terminology';
 
 const Attendance = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
@@ -63,7 +65,7 @@ const Attendance = () => {
 
     const loadStudents = async () => {
         if (!selectedClass) {
-            setMessage({ type: 'error', text: 'Pehle Class select karo' });
+            setMessage({ type: 'error', text: `Pehle ${t.class} select karo` });
             return;
         }
 
@@ -94,7 +96,7 @@ const Attendance = () => {
             setAttendanceMap(map);
         } catch (err) {
             console.error(err);
-            setMessage({ type: 'error', text: 'Failed to load students' });
+            setMessage({ type: 'error', text: `Failed to load ${t.students.toLowerCase()}` });
         } finally {
             setFetching(false);
         }
@@ -120,7 +122,7 @@ const Attendance = () => {
 
     const handleSave = async () => {
         if (students.length === 0) {
-            setMessage({ type: 'error', text: 'Pehle students load karo' });
+            setMessage({ type: 'error', text: `Pehle ${t.students.toLowerCase()} load karo` });
             return;
         }
 
@@ -135,13 +137,13 @@ const Attendance = () => {
             }));
 
             await api.post('/attendance/bulk', { records });
-            setMessage({ type: 'success', text: `${records.length} attendance records saved! ✅` });
+            setMessage({ type: 'success', text: `${records.length} ${t.attendance.toLowerCase()} records saved! ✅` });
             fetchStats();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to save attendance',
+                text: error.response?.data?.detail || `Failed to save ${t.attendance.toLowerCase()}`,
             });
         } finally {
             setLoading(false);
@@ -157,7 +159,7 @@ const Attendance = () => {
     };
 
     const getStudentName = (s) => {
-        return s.student_name || s.name || `Student #${s.id}`;
+        return s.student_name || s.name || `${t.student} #${s.id}`;
     };
 
     const getRollNumber = (s) => {
@@ -172,8 +174,8 @@ const Attendance = () => {
             {/* Header with Export Button */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Attendance</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Mark daily attendance for students</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.attendance}</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Mark daily {t.attendance.toLowerCase()} for {t.students.toLowerCase()}</p>
                 </div>
                 <button
                     onClick={handleExport}
@@ -276,13 +278,13 @@ const Attendance = () => {
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>🏫 Class</label>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>🏫 {t.class}</label>
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
                         style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                     >
-                        <option value="">Select Class</option>
+                        <option value="">Select {t.class}</option>
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
@@ -290,14 +292,14 @@ const Attendance = () => {
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>📚 Section</label>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>📚 {t.section}</label>
                     <select
                         value={selectedSection}
                         onChange={(e) => setSelectedSection(e.target.value)}
                         disabled={!selectedClass}
                         style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}
                     >
-                        <option value="">All Sections</option>
+                        <option value="">All {t.sections}</option>
                         {sections.map((s) => (
                             <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
@@ -320,7 +322,7 @@ const Attendance = () => {
                             cursor: (!selectedClass || fetching) ? 'not-allowed' : 'pointer',
                         }}
                     >
-                        {fetching ? 'Loading...' : '🔍 Load Students'}
+                        {fetching ? 'Loading...' : `🔍 Load ${t.students}`}
                     </button>
                 </div>
             </div>
@@ -362,7 +364,7 @@ const Attendance = () => {
             {students.length > 0 && (
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden', marginBottom: '24px' }}>
                     <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                        <h3 style={{ margin: 0, color: '#1a202c' }}>Students ({students.length})</h3>
+                        <h3 style={{ margin: 0, color: '#1a202c' }}>{t.students} ({students.length})</h3>
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
@@ -440,7 +442,7 @@ const Attendance = () => {
                             boxShadow: '0 4px 15px rgba(72, 187, 120, 0.4)',
                         }}
                     >
-                        {loading ? 'Saving...' : '💾 Save Attendance'}
+                        {loading ? 'Saving...' : `💾 Save ${t.attendance}`}
                     </button>
                 </div>
             )}
@@ -455,7 +457,7 @@ const Attendance = () => {
                 }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>📋</div>
                     <p style={{ color: '#718096' }}>
-                        Date, Class aur Section select karke "Load Students" dabao
+                        Date, {t.class} aur {t.section} select karke "Load {t.students}" dabao
                     </p>
                 </div>
             )}

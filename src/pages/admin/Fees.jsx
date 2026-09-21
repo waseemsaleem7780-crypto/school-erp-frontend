@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { downloadExcel } from '../../utils/exportUtils';
+import { useTerms } from '../../utils/terminology';
 
 const Fees = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [view, setView] = useState('structure');
     const [classes, setClasses] = useState([]);
     const [students, setStudents] = useState([]);
@@ -99,11 +101,11 @@ const Fees = () => {
                 due_date: structureForm.due_date,
             });
             setStructureForm({ class_id: '', month: '', yearly_fee: '', amount: '', due_date: '' });
-            setMessage({ type: 'success', text: 'Fee structure added! ✅' });
+            setMessage({ type: 'success', text: `${t.fee} structure added! ✅` });
             if (selectedClass) fetchStructures(selectedClass);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to add fee structure' });
+            setMessage({ type: 'error', text: error.response?.data?.detail || `Failed to add ${t.fee.toLowerCase()} structure` });
         } finally {
             setLoading(false);
         }
@@ -140,8 +142,8 @@ const Fees = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Fees</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Manage fee structures and payments</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.fees}</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage {t.fee.toLowerCase()} structures and payments</p>
                 </div>
                 <button
                     onClick={handleExport}
@@ -176,7 +178,7 @@ const Fees = () => {
                         color: view === 'structure' ? 'white' : '#4a5568',
                     }}
                 >
-                    📋 Fee Structure
+                    📋 {t.fee} Structure
                 </button>
                 <button
                     onClick={() => setView('payment')}
@@ -191,7 +193,7 @@ const Fees = () => {
                         color: view === 'payment' ? 'white' : '#4a5568',
                     }}
                 >
-                    💰 Fee Payment
+                    💰 {t.fee} Payment
                 </button>
             </div>
 
@@ -220,17 +222,17 @@ const Fees = () => {
                         marginBottom: '24px',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                     }}>
-                        <h3 style={{ marginTop: 0, color: '#1a202c', marginBottom: '20px' }}>➕ Add Fee Structure</h3>
+                        <h3 style={{ marginTop: 0, color: '#1a202c', marginBottom: '20px' }}>➕ Add {t.fee} Structure</h3>
                         <form onSubmit={handleStructureSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
                                 <select
                                     value={structureForm.class_id}
                                     onChange={(e) => setStructureForm({ ...structureForm, class_id: e.target.value })}
                                     style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                     required
                                 >
-                                    <option value="">Select Class</option>
+                                    <option value="">Select {t.class}</option>
                                     {classes.map((c) => (
                                         <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
@@ -253,7 +255,7 @@ const Fees = () => {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Yearly Fee (Rs)</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Yearly {t.fee} (Rs)</label>
                                 <input
                                     type="number"
                                     value={structureForm.yearly_fee}
@@ -265,7 +267,7 @@ const Fees = () => {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Monthly Fee (Rs)</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Monthly {t.fee} (Rs)</label>
                                 <input
                                     type="number"
                                     value={structureForm.amount}
@@ -310,14 +312,14 @@ const Fees = () => {
 
                     <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                            🔍 View Structure by Class
+                            🔍 View Structure by {t.class}
                         </label>
                         <select
                             value={selectedClass}
                             onChange={(e) => setSelectedClass(e.target.value)}
                             style={{ width: '100%', maxWidth: '300px', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
                         >
-                            <option value="">-- Select Class --</option>
+                            <option value="">-- Select {t.class} --</option>
                             {classes.map((c) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
@@ -326,20 +328,20 @@ const Fees = () => {
 
                     <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                            <h3 style={{ margin: 0, color: '#1a202c' }}>Fee Structures ({structures.length})</h3>
+                            <h3 style={{ margin: 0, color: '#1a202c' }}>{t.fee} Structures ({structures.length})</h3>
                         </div>
                         {structures.length === 0 ? (
                             <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                                 <div style={{ fontSize: '64px', marginBottom: '16px' }}>📋</div>
-                                <p style={{ color: '#718096' }}>No fee structures for this class yet</p>
+                                <p style={{ color: '#718096' }}>No {t.fee.toLowerCase()} structures for this {t.class.toLowerCase()} yet</p>
                             </div>
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ backgroundColor: '#f7fafc' }}>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Month</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Yearly Fee</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Monthly Fee</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Yearly {t.fee}</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Monthly {t.fee}</th>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Due Date</th>
                                     </tr>
                                 </thead>
@@ -376,13 +378,13 @@ const Fees = () => {
                         <h3 style={{ marginTop: 0, color: '#1a202c', marginBottom: '20px' }}>➕ Record Payment</h3>
                         <form onSubmit={handlePaymentSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
                                 <select
                                     value={selectedClass}
                                     onChange={(e) => { setSelectedClass(e.target.value); setPaymentForm({ ...paymentForm, student_id: '' }); }}
                                     style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                 >
-                                    <option value="">Select Class</option>
+                                    <option value="">Select {t.class}</option>
                                     {classes.map((c) => (
                                         <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
@@ -390,7 +392,7 @@ const Fees = () => {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
                                 <select
                                     value={paymentForm.student_id}
                                     onChange={(e) => { setPaymentForm({ ...paymentForm, student_id: e.target.value }); setSelectedStudent(e.target.value); }}
@@ -398,7 +400,7 @@ const Fees = () => {
                                     style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: selectedClass ? 'white' : '#f7fafc' }}
                                     required
                                 >
-                                    <option value="">Select Student</option>
+                                    <option value="">Select {t.student}</option>
                                     {students.map((s) => (
                                         <option key={s.id} value={s.id}>Roll {s.roll_number}</option>
                                     ))}
@@ -406,7 +408,7 @@ const Fees = () => {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Monthly Fee</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Monthly {t.fee}</label>
                                 <input
                                     type="number"
                                     value={paymentForm.monthly_fee}
@@ -418,7 +420,7 @@ const Fees = () => {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Yearly Fee</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Yearly {t.fee}</label>
                                 <input
                                     type="number"
                                     value={paymentForm.yearly_fee}
@@ -483,7 +485,7 @@ const Fees = () => {
                         {payments.length === 0 ? (
                             <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                                 <div style={{ fontSize: '64px', marginBottom: '16px' }}>💰</div>
-                                <p style={{ color: '#718096' }}>Select a student to view payment history</p>
+                                <p style={{ color: '#718096' }}>Select a {t.student.toLowerCase()} to view payment history</p>
                             </div>
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

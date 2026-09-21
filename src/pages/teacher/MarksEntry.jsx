@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const MarksEntry = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [classes, setClasses] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [students, setStudents] = useState([]);
@@ -10,7 +12,7 @@ const MarksEntry = () => {
     const [form, setForm] = useState({
         class_id: '',
         exam_id: '',
-        student_id: 'all',  // ✅ All Students default
+        student_id: 'all',
         subject_id: '',
         marks_obtained: '',
         grade: '',
@@ -45,7 +47,6 @@ const MarksEntry = () => {
         }
     };
 
-    // ✅ Subjects — dono endpoints try karo
     const fetchSubjects = async (classId) => {
         try {
             let res;
@@ -84,7 +85,6 @@ const MarksEntry = () => {
         }
     };
 
-    // ✅ Class ke results — students ke through
     const fetchResultsByClass = async (classId) => {
         try {
             let studentsRes;
@@ -115,13 +115,12 @@ const MarksEntry = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
-        // ✅ Target students
         const targetIds = form.student_id === 'all'
             ? students.map(s => s.id)
             : [parseInt(form.student_id)];
 
         if (targetIds.length === 0) {
-            setMessage({ type: 'error', text: 'Koi student nahi mila is class mein' });
+            setMessage({ type: 'error', text: `Koi ${t.student.toLowerCase()} nahi mila is ${t.class.toLowerCase()} mein` });
             setLoading(false);
             return;
         }
@@ -147,17 +146,17 @@ const MarksEntry = () => {
             if (successCount > 0) {
                 setMessage({
                     type: 'success',
-                    text: `${successCount} students ke marks save ho gaye! ✅`,
+                    text: `${successCount} ${t.students.toLowerCase()} ke ${t.marks.toLowerCase()} save ho gaye! ✅`,
                 });
                 setForm({ ...form, marks_obtained: '', grade: '', remarks: '' });
                 setShowForm(false);
                 await fetchResultsByClass(form.class_id);
                 setTimeout(() => setMessage({ type: '', text: '' }), 3000);
             } else {
-                setMessage({ type: 'error', text: 'Koi marks save nahi hue' });
+                setMessage({ type: 'error', text: `Koi ${t.marks.toLowerCase()} save nahi hue` });
             }
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to save marks' });
+            setMessage({ type: 'error', text: error.response?.data?.detail || `Failed to save ${t.marks.toLowerCase()}` });
         } finally {
             setLoading(false);
         }
@@ -167,8 +166,8 @@ const MarksEntry = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Marks Entry</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Enter exam marks for students</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.marks} Entry</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Enter {t.exam.toLowerCase()} {t.marks.toLowerCase()} for {t.students.toLowerCase()}</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
@@ -179,7 +178,7 @@ const MarksEntry = () => {
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Enter Marks'}
+                    {showForm ? '✕ Cancel' : `+ Enter ${t.marks}`}
                 </button>
             </div>
 
@@ -195,47 +194,47 @@ const MarksEntry = () => {
 
             {showForm && (
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Enter Student Marks</h3>
+                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Enter {t.student} {t.marks}</h3>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
                             <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: 'all', subject_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select Class</option>
+                                <option value="">Select {t.class}</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Exam</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.exam}</label>
                             <select value={form.exam_id} onChange={(e) => setForm({ ...form, exam_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Exam</option>
+                                <option value="">Select {t.exam}</option>
                                 {exams.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
                             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="all">📚 All Students ({students.length})</option>
+                                <option value="all">📚 All {t.students} ({students.length})</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
                             <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Subject</option>
+                                <option value="">Select {t.subject}</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                             {form.class_id && subjects.length === 0 && (
                                 <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>
-                                    Is class mein koi subject nahi — admin se add karwao
+                                    Is {t.class.toLowerCase()} mein koi {t.subject.toLowerCase()} nahi — admin se add karwao
                                 </p>
                             )}
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Marks Obtained</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.marks} Obtained</label>
                             <input type="number" step="0.5" value={form.marks_obtained} onChange={(e) => setForm({ ...form, marks_obtained: e.target.value })} placeholder="85" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
                         </div>
 
@@ -254,8 +253,8 @@ const MarksEntry = () => {
                                 {loading
                                     ? 'Saving...'
                                     : form.student_id === 'all'
-                                        ? `💾 Save Marks for All (${students.length})`
-                                        : '💾 Save Marks'}
+                                        ? `💾 Save ${t.marks} for All (${students.length})`
+                                        : `💾 Save ${t.marks}`}
                             </button>
                         </div>
                     </form>
@@ -264,21 +263,21 @@ const MarksEntry = () => {
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>Recent Results ({results.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>Recent {t.results} ({results.length})</h3>
                 </div>
                 {results.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📊</div>
-                        <p style={{ color: '#718096' }}>No marks entered yet</p>
+                        <p style={{ color: '#718096' }}>No {t.marks.toLowerCase()} entered yet</p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Exam</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Subject</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Marks</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.exam}</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.subject}</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.marks}</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Grade</th>
                             </tr>
                         </thead>

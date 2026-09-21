@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const Subjects = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [subjects, setSubjects] = useState([]);
     const [classes, setClasses] = useState([]);
-    const [teachers, setTeachers] = useState([]);  // ✅ NEW
+    const [teachers, setTeachers] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ const Subjects = () => {
         name: '',
         code: '',
         class_id: '',
-        teacher_id: '',  // ✅ NEW
+        teacher_id: '',
     });
 
     useEffect(() => {
@@ -40,7 +42,6 @@ const Subjects = () => {
         }
     };
 
-    // ✅ NEW: Teachers fetch karo
     const fetchTeachers = async () => {
         try {
             const res = await api.get('/teachers/');
@@ -81,7 +82,6 @@ const Subjects = () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
-        // ✅ teacher_id bhi bhejo
         const payload = {
             name: form.name,
             code: form.code,
@@ -92,10 +92,10 @@ const Subjects = () => {
         try {
             if (editingId) {
                 await api.put(`/subjects/${editingId}`, payload);
-                setMessage({ type: 'success', text: 'Subject updated! ✅' });
+                setMessage({ type: 'success', text: `${t.subject} updated! ✅` });
             } else {
                 await api.post('/subjects/', payload);
-                setMessage({ type: 'success', text: 'Subject added! ✅' });
+                setMessage({ type: 'success', text: `${t.subject} added! ✅` });
             }
             setForm({ name: '', code: '', class_id: '', teacher_id: '' });
             setEditingId(null);
@@ -105,7 +105,7 @@ const Subjects = () => {
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to save subject',
+                text: error.response?.data?.detail || `Failed to save ${t.subject.toLowerCase()}`,
             });
         } finally {
             setLoading(false);
@@ -124,11 +124,11 @@ const Subjects = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Kya aap waqai ye subject delete karna chahte ho?')) return;
+        if (!window.confirm(`Kya aap waqai ye ${t.subject.toLowerCase()} delete karna chahte ho?`)) return;
 
         try {
             await api.delete(`/subjects/${id}`);
-            setMessage({ type: 'success', text: 'Subject deleted! ✅' });
+            setMessage({ type: 'success', text: `${t.subject} deleted! ✅` });
             fetchAllSubjects();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
@@ -144,23 +144,22 @@ const Subjects = () => {
 
     const getClassName = (classId) => {
         const cls = classes.find((c) => c.id === classId);
-        return cls ? cls.name : `Class #${classId}`;
+        return cls ? cls.name : `${t.class} #${classId}`;
     };
 
-    // ✅ NEW: Teacher name dhundo
     const getTeacherName = (teacherId) => {
         if (!teacherId) return '—';
-        const t = teachers.find((t) => t.id === teacherId);
-        if (!t) return `Teacher #${teacherId}`;
-        return `Teacher #${t.id} (User ${t.user_id}) - ${t.qualification}`;
+        const tch = teachers.find((t) => t.id === teacherId);
+        if (!tch) return `${t.teacher} #${teacherId}`;
+        return `${t.teacher} #${tch.id} (User ${tch.user_id}) - ${tch.qualification}`;
     };
 
     return (
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Subjects</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Manage subjects per class</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.subjects}</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage {t.subjects.toLowerCase()} per {t.class.toLowerCase()}</p>
                 </div>
                 <button
                     onClick={() => showForm ? handleCancel() : setShowForm(true)}
@@ -176,7 +175,7 @@ const Subjects = () => {
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Add Subject'}
+                    {showForm ? '✕ Cancel' : `+ Add ${t.subject}`}
                 </button>
             </div>
 
@@ -201,11 +200,11 @@ const Subjects = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
-                        {editingId ? 'Edit Subject' : 'Add New Subject'}
+                        {editingId ? `Edit ${t.subject}` : `Add New ${t.subject}`}
                     </h3>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject Name</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject} Name</label>
                             <input
                                 type="text"
                                 value={form.name}
@@ -217,7 +216,7 @@ const Subjects = () => {
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject Code</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject} Code</label>
                             <input
                                 type="text"
                                 value={form.code}
@@ -229,34 +228,33 @@ const Subjects = () => {
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
                             <select
                                 value={form.class_id}
                                 onChange={(e) => setForm({ ...form, class_id: e.target.value })}
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                                 required
                             >
-                                <option value="">Select Class</option>
+                                <option value="">Select {t.class}</option>
                                 {classes.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* ✅ NEW: Teacher Dropdown */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>
-                                Teacher (Optional)
+                                {t.teacher} (Optional)
                             </label>
                             <select
                                 value={form.teacher_id}
                                 onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
                                 style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
                             >
-                                <option value="">-- No Teacher --</option>
-                                {teachers.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        Teacher #{t.id} (User {t.user_id}) - {t.qualification}
+                                <option value="">-- No {t.teacher} --</option>
+                                {teachers.map((tch) => (
+                                    <option key={tch.id} value={tch.id}>
+                                        {t.teacher} #{tch.id} (User {tch.user_id}) - {tch.qualification}
                                     </option>
                                 ))}
                             </select>
@@ -277,7 +275,7 @@ const Subjects = () => {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
-                                {loading ? 'Saving...' : (editingId ? '💾 Update Subject' : '💾 Save Subject')}
+                                {loading ? 'Saving...' : (editingId ? `💾 Update ${t.subject}` : `💾 Save ${t.subject}`)}
                             </button>
                         </div>
                     </form>
@@ -296,7 +294,7 @@ const Subjects = () => {
             }}>
                 <div style={{ fontSize: '36px' }}>📚</div>
                 <div>
-                    <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total Subjects</p>
+                    <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total {t.subjects}</p>
                     <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
                         {subjects.length}
                     </p>
@@ -306,7 +304,7 @@ const Subjects = () => {
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: '250px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                        🔎 Search Subjects
+                        🔎 Search {t.subjects}
                     </label>
                     <input
                         type="text"
@@ -326,14 +324,14 @@ const Subjects = () => {
                 </div>
                 <div style={{ flex: 1, minWidth: '250px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                        🔍 Filter by Class
+                        🔍 Filter by {t.class}
                     </label>
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
                         style={{ width: '100%', padding: '12px 16px', fontSize: '15px', border: '2px solid #e2e8f0', borderRadius: '10px', outline: 'none', backgroundColor: 'white' }}
                     >
-                        <option value="">-- All Classes --</option>
+                        <option value="">-- All {t.classes} --</option>
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
@@ -343,7 +341,7 @@ const Subjects = () => {
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>All Subjects ({filteredSubjects.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>All {t.subjects} ({filteredSubjects.length})</h3>
                 </div>
 
                 {fetching ? (
@@ -354,7 +352,7 @@ const Subjects = () => {
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
                         <p style={{ color: '#718096' }}>
-                            {searchTerm ? 'No subjects match your search' : 'No subjects yet'}
+                            {searchTerm ? `No ${t.subjects.toLowerCase()} match your search` : `No ${t.subjects.toLowerCase()} yet`}
                         </p>
                     </div>
                 ) : (
@@ -362,10 +360,10 @@ const Subjects = () => {
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Subject</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.subject}</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Code</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Teacher</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.class}</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.teacher}</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>

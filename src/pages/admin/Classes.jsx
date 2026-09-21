@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const Classes = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
@@ -44,12 +46,12 @@ const Classes = () => {
                 await api.put(`/classes/${editingId}`, {
                     name: form.name,
                 });
-                setMessage({ type: 'success', text: 'Class updated! ✅' });
+                setMessage({ type: 'success', text: `${t.class} updated! ✅` });
             } else {
                 await api.post('/classes/', {
                     name: form.name,
                 });
-                setMessage({ type: 'success', text: 'Class added! ✅' });
+                setMessage({ type: 'success', text: `${t.class} added! ✅` });
             }
             setForm({ name: '' });
             setEditingId(null);
@@ -59,7 +61,7 @@ const Classes = () => {
         } catch (error) {
             setMessage({
                 type: 'error',
-                text: error.response?.data?.detail || 'Failed to save class',
+                text: error.response?.data?.detail || `Failed to save ${t.class.toLowerCase()}`,
             });
         } finally {
             setLoading(false);
@@ -73,11 +75,11 @@ const Classes = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Kya aap waqai ye class delete karna chahte ho?')) return;
+        if (!window.confirm(`Kya aap waqai ye ${t.class.toLowerCase()} delete karna chahte ho?`)) return;
 
         try {
             await api.delete(`/classes/${id}`);
-            setMessage({ type: 'success', text: 'Class deleted! ✅' });
+            setMessage({ type: 'success', text: `${t.class} deleted! ✅` });
             fetchClasses();
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
@@ -95,8 +97,8 @@ const Classes = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Classes</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Manage all classes (Grade 1, 2, 3...)</p>
+                    <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>{t.classes}</h1>
+                    <p style={{ color: '#718096', margin: 0 }}>Manage all {t.classes.toLowerCase()}</p>
                 </div>
                 <button
                     onClick={() => showForm ? handleCancel() : setShowForm(true)}
@@ -112,7 +114,7 @@ const Classes = () => {
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
-                    {showForm ? '✕ Cancel' : '+ Add Class'}
+                    {showForm ? '✕ Cancel' : `+ Add ${t.class}`}
                 </button>
             </div>
 
@@ -137,16 +139,16 @@ const Classes = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
-                        {editingId ? 'Edit Class' : 'Add New Class'}
+                        {editingId ? `Edit ${t.class}` : `Add New ${t.class}`}
                     </h3>
                     <form onSubmit={handleSubmit}>
                         <div style={{ marginBottom: '16px' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class Name</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class} Name</label>
                             <input
                                 type="text"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                placeholder="e.g., Grade 1"
+                                placeholder={`e.g., ${t.class} 1`}
                                 style={{ width: '100%', maxWidth: '400px', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
                                 required
                             />
@@ -166,7 +168,7 @@ const Classes = () => {
                                 cursor: loading ? 'not-allowed' : 'pointer',
                             }}
                         >
-                            {loading ? 'Saving...' : (editingId ? '💾 Update Class' : '💾 Save Class')}
+                            {loading ? 'Saving...' : (editingId ? `💾 Update ${t.class}` : `💾 Save ${t.class}`)}
                         </button>
                     </form>
                 </div>
@@ -184,7 +186,7 @@ const Classes = () => {
             }}>
                 <div style={{ fontSize: '36px' }}>🏫</div>
                 <div>
-                    <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total Classes</p>
+                    <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>Total {t.classes}</p>
                     <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
                         {classes.length}
                     </p>
@@ -193,7 +195,7 @@ const Classes = () => {
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔎 Search Classes
+                    🔎 Search {t.classes}
                 </label>
                 <input
                     type="text"
@@ -214,7 +216,7 @@ const Classes = () => {
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>All Classes ({filteredClasses.length})</h3>
+                    <h3 style={{ margin: 0, color: '#1a202c' }}>All {t.classes} ({filteredClasses.length})</h3>
                 </div>
 
                 {fetching ? (
@@ -225,7 +227,7 @@ const Classes = () => {
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📭</div>
                         <p style={{ color: '#718096' }}>
-                            {searchTerm ? 'No classes match your search' : 'No classes yet'}
+                            {searchTerm ? `No ${t.classes.toLowerCase()} match your search` : `No ${t.classes.toLowerCase()} yet`}
                         </p>
                     </div>
                 ) : (
@@ -233,7 +235,7 @@ const Classes = () => {
                         <thead>
                             <tr style={{ backgroundColor: '#f7fafc' }}>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Class Name</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.class} Name</th>
                                 <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>

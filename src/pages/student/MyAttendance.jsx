@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const MyAttendance = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [attendance, setAttendance] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -13,7 +15,6 @@ const MyAttendance = () => {
 
     const fetchAttendance = async () => {
         try {
-            // Step 1: Student ID lo
             const meRes = await api.get('/auth/me');
             const studentId = meRes.data.student_id;
 
@@ -23,12 +24,10 @@ const MyAttendance = () => {
                 return;
             }
 
-            // Step 2: Attendance history lo
             const historyRes = await api.get(`/attendance/history/${studentId}`);
             const data = Array.isArray(historyRes.data) ? historyRes.data : [];
             setAttendance(data);
 
-            // Step 3: Stats calculate karo
             const total = data.length;
             const present = data.filter((a) => a.status === 'present').length;
             const absent = data.filter((a) => a.status === 'absent').length;
@@ -38,7 +37,7 @@ const MyAttendance = () => {
             setStats({ total, present, absent, late, percentage });
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.detail || 'Failed to load attendance');
+            setError(err.response?.data?.detail || `Failed to load ${t.attendance.toLowerCase()}`);
             setAttendance([]);
         } finally {
             setLoading(false);
@@ -48,7 +47,7 @@ const MyAttendance = () => {
     if (loading) {
         return (
             <div style={{ padding: '40px', textAlign: 'center', color: '#718096' }}>
-                Loading attendance...
+                Loading {t.attendance.toLowerCase()}...
             </div>
         );
     }
@@ -72,10 +71,10 @@ const MyAttendance = () => {
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ marginBottom: '30px' }}>
                 <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>
-                    My Attendance
+                    My {t.attendance}
                 </h1>
                 <p style={{ color: '#718096', margin: 0 }}>
-                    Your attendance history and statistics
+                    Your {t.attendance.toLowerCase()} history and statistics
                 </p>
             </div>
 
@@ -95,7 +94,7 @@ const MyAttendance = () => {
                         boxShadow: '0 4px 20px rgba(102, 126, 234, 0.4)',
                     }}>
                         <p style={{ margin: 0, opacity: 0.9, fontSize: '13px', fontWeight: '600' }}>
-                            ATTENDANCE %
+                            {t.attendance.toUpperCase()} %
                         </p>
                         <p style={{ margin: '8px 0 0 0', fontSize: '36px', fontWeight: '800' }}>
                             {stats.percentage}%
@@ -161,14 +160,14 @@ const MyAttendance = () => {
             }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                     <h3 style={{ margin: 0, color: '#1a202c' }}>
-                        Attendance History ({attendance.length})
+                        {t.attendance} History ({attendance.length})
                     </h3>
                 </div>
 
                 {attendance.length === 0 ? (
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📅</div>
-                        <p style={{ color: '#718096' }}>No attendance records yet</p>
+                        <p style={{ color: '#718096' }}>No {t.attendance.toLowerCase()} records yet</p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>

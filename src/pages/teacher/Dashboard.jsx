@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const TeacherDashboard = () => {
+    const t = useTerms();   // ✅ Mode-based labels
     const [stats, setStats] = useState({
         classes_count: 0,
         students_count: 0,
@@ -71,10 +73,10 @@ const TeacherDashboard = () => {
     }
 
     const cards = [
-        { title: 'My Classes', value: stats.classes_count, color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', emoji: '🏫', subtitle: 'Total classes', shadow: 'rgba(102, 126, 234, 0.4)' },
-        { title: 'My Students', value: stats.students_count, color: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)', emoji: '👨‍🎓', subtitle: 'Enrolled students', shadow: 'rgba(237, 137, 54, 0.4)' },
-        { title: 'My Subjects', value: stats.subjects_count, color: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)', emoji: '📚', subtitle: 'Subjects taught', shadow: 'rgba(72, 187, 120, 0.4)' },
-        { title: 'Today Attendance', value: stats.attendance_marked_today, color: 'linear-gradient(135deg, #38b2ac 0%, #319795 100%)', emoji: '✅', subtitle: 'Marked today', shadow: 'rgba(56, 178, 172, 0.4)' },
+        { title: `My ${t.classes}`, value: stats.classes_count, color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', emoji: '🏫', subtitle: `Total ${t.classes.toLowerCase()}`, shadow: 'rgba(102, 126, 234, 0.4)' },
+        { title: `My ${t.students}`, value: stats.students_count, color: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)', emoji: '👨‍🎓', subtitle: `Enrolled ${t.students.toLowerCase()}`, shadow: 'rgba(237, 137, 54, 0.4)' },
+        { title: `My ${t.subjects}`, value: stats.subjects_count, color: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)', emoji: '📚', subtitle: `${t.subjects} taught`, shadow: 'rgba(72, 187, 120, 0.4)' },
+        { title: `Today ${t.attendance}`, value: stats.attendance_marked_today, color: 'linear-gradient(135deg, #38b2ac 0%, #319795 100%)', emoji: '✅', subtitle: 'Marked today', shadow: 'rgba(56, 178, 172, 0.4)' },
     ];
 
     return (
@@ -95,7 +97,7 @@ const TeacherDashboard = () => {
                     margin: '0 0 8px 0',
                     fontWeight: '800',
                 }}>
-                    👨‍🏫 Teacher Dashboard
+                    👨‍🏫 {t.teacher} Dashboard
                 </h1>
                 <p style={{ color: '#4a5568', margin: 0, fontSize: '15px' }}>
                     👋 Welcome back! Here's your teaching overview.
@@ -159,10 +161,10 @@ const TeacherDashboard = () => {
                     opacity: 0.08,
                 }}>🎓</div>
                 <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '700' }}>
-                    Welcome, Teacher! 👋
+                    Welcome, {t.teacher}! 👋
                 </h2>
                 <p style={{ margin: 0, opacity: 0.9, fontSize: '15px' }}>
-                    Mark attendance, assign homework, and enter marks from the sidebar.
+                    Mark {t.attendance.toLowerCase()}, assign {t.homework.toLowerCase()}, and enter {t.marks.toLowerCase()} from the sidebar.
                 </p>
             </div>
 
@@ -179,23 +181,23 @@ const TeacherDashboard = () => {
                     background: 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)',
                 }}>
                     <h3 style={{ margin: 0, color: '#1a202c', fontSize: '20px', fontWeight: '700' }}>
-                        📚 My Subjects ({classes.length})
+                        📚 My {t.subjects} ({classes.length})
                     </h3>
                 </div>
                 {classes.length === 0 ? (
                     <div style={{ padding: '80px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: '72px', marginBottom: '16px' }}>📭</div>
                         <p style={{ color: '#718096', fontSize: '15px' }}>
-                            No subjects assigned yet. Contact admin.
+                            No {t.subjects.toLowerCase()} assigned yet. Contact admin.
                         </p>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: '#f7fafc' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Subject</th>
+                                <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>{t.subject}</th>
                                 <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Code</th>
-                                <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Class</th>
+                                <th style={{ textAlign: 'left', padding: '16px 28px', color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>{t.class}</th>
                             </tr>
                         </thead>
                         <tbody>
