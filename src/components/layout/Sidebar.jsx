@@ -6,11 +6,38 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
-    const { user, logout } = useAuth();   // ✅ Auth context se user lo
+    const { user, loading, logout } = useAuth();   // ✅ loading bhi lo
     const t = useTerms();
 
-    // ✅ Role directly user object se — koi token decode nahi
-    const role = user?.role || 'admin';
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ CRITICAL FIX: Loading ya user null par kuch render na karo
+    // ═══════════════════════════════════════════════════════════════
+    if (loading || !user) {
+        return (
+            <div
+                style={{
+                    width: '250px',
+                    backgroundColor: '#1e293b',
+                    color: 'white',
+                    height: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'fixed',
+                    left: 0,
+                    top: 0,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔒</div>
+                    <div style={{ fontSize: '13px' }}>Loading...</div>
+                </div>
+            </div>
+        );
+    }
+
+    const role = user.role || 'admin';
 
     let schoolSlug = params.schoolSlug || null;
 
@@ -25,7 +52,7 @@ const Sidebar = () => {
     }
 
     const prefix = schoolSlug ? `/${schoolSlug}` : '';
-    const instituteType = user?.institute_type || 'school';
+    const instituteType = user.institute_type || 'school';
     const modeIcon = getModeIcon(instituteType);
 
     const superAdminMenu = [
@@ -102,9 +129,8 @@ const Sidebar = () => {
         roleLabel = 'Admin';
     }
 
-    // ✅ Logout — context se
     const handleLogout = async () => {
-        await logout();   // Backend cookie clear karega + redirect
+        await logout();
     };
 
     return (
@@ -123,7 +149,7 @@ const Sidebar = () => {
         >
             <div style={{ padding: '20px', borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <h2 style={{ margin: 0, fontSize: '20px' }}>
-                    {modeIcon} {user?.school_name || 'School ERP'}
+                    {modeIcon} {user.school_name || 'School ERP'}
                 </h2>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
                     {roleLabel} Panel
