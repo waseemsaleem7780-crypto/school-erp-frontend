@@ -1,7 +1,6 @@
 import { Navigate, Outlet, useParams, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { getToken, clearToken, detectRoleFromUrl } from '../utils/authStorage';
 
 const ProtectedRoute = ({ allowedRoles }) => {
     const [status, setStatus] = useState('checking');
@@ -9,51 +8,27 @@ const ProtectedRoute = ({ allowedRoles }) => {
     const { schoolSlug } = useParams();
     const location = useLocation();
 
-    const token = getToken();
-
     useEffect(() => {
         let cancelled = false;
 
         const verifyAccess = async () => {
-            const currentToken = getToken();
-
-            if (!currentToken) {
-                if (cancelled) return;
-                setStatus('denied');
-                setRedirectTo(schoolSlug ? `/${schoolSlug}/login` : '/login');
-                return;
-            }
-
-            try {
-                const payload = JSON.parse(atob(currentToken.split('.')[1]));
-                if (payload.exp && payload.exp * 1000 < Date.now()) {
-                    clearToken();
-                    if (cancelled) return;
-                    setStatus('denied');
-                    setRedirectTo(schoolSlug ? `/${schoolSlug}/login` : '/login');
-                    return;
-                }
-            } catch (err) {
-                clearToken();
-                if (cancelled) return;
-                setStatus('denied');
-                setRedirectTo(schoolSlug ? `/${schoolSlug}/login` : '/login');
-                return;
-            }
-
+            // ═══════════════════════════════════════
+            // ✅ Cookie automatically bhejta hai
+            // Backend verify karega — hum sirf response dekhte hain
+            // ═══════════════════════════════════════
             let backendUser = null;
             try {
                 const res = await api.get('/auth/me');
                 backendUser = res.data;
+
                 if (!backendUser || !backendUser.role) {
-                    clearToken();
                     if (cancelled) return;
                     setStatus('denied');
                     setRedirectTo(schoolSlug ? `/${schoolSlug}/login` : '/login');
                     return;
                 }
             } catch (error) {
-                clearToken();
+                // Cookie invalid/expired/missing
                 if (cancelled) return;
                 setStatus('denied');
                 setRedirectTo(schoolSlug ? `/${schoolSlug}/login` : '/login');
@@ -62,6 +37,9 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
             const userRole = backendUser.role;
 
+            // ═══════════════════════════════════════
+            // School slug match check
+            // ═══════════════════════════════════════
             if (schoolSlug && backendUser.school_slug) {
                 if (schoolSlug !== backendUser.school_slug) {
                     if (cancelled) return;
@@ -71,6 +49,9 @@ const ProtectedRoute = ({ allowedRoles }) => {
                 }
             }
 
+            // ═══════════════════════════════════════
+            // Role match check
+            // ═══════════════════════════════════════
             if (allowedRoles && !allowedRoles.includes(userRole)) {
                 const prefix = schoolSlug ? `/${schoolSlug}` : '';
 
@@ -85,6 +66,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
                 return;
             }
 
+            // ✅ All checks passed
             if (cancelled) return;
             setStatus('allowed');
         };
@@ -94,7 +76,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
         return () => {
             cancelled = true;
         };
-    }, [allowedRoles, schoolSlug, location.pathname, token]);
+    }, [allowedRoles, schoolSlug, location.pathname]);
 
     if (status === 'checking') {
         return (

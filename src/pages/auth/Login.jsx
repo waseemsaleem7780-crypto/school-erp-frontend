@@ -36,8 +36,10 @@ const Login = () => {
         setError('');
         setLoading(true);
 
+        // ✅ Legacy cleanup — koi localStorage nahi
         clearAllTokens();
 
+        // ✅ login() backend cookie set karega + user return karega
         const result = await login(email, password);
 
         if (result.success) {
@@ -45,6 +47,7 @@ const Login = () => {
             const tokenSchoolSlug = result.school_slug;
             const finalSlug = tokenSchoolSlug || schoolSlug;
 
+            // ✅ Role-based redirect
             if (role === 'super_admin') {
                 window.location.href = '/superadmin/schools';
             } else if (role === 'admin') {

@@ -1,5 +1,4 @@
 import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { getToken, clearToken } from '../../utils/authStorage';
 import { useTerms, getModeIcon } from '../../utils/terminology';
 import { useAuth } from '../../context/AuthContext';
 
@@ -7,23 +6,20 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
-    const { user } = useAuth();
-    const t = useTerms();  // ✅ Mode-based terms
-    const token = getToken();
+    const { user, logout } = useAuth();   // ✅ Auth context se user lo
+    const t = useTerms();
 
-    let role = 'admin';
+    // ✅ Role directly user object se — koi token decode nahi
+    const role = user?.role || 'admin';
+
     let schoolSlug = params.schoolSlug || null;
-
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        role = payload.role;
-    } catch (err) {
-        role = 'admin';
-    }
 
     if (!schoolSlug) {
         const pathParts = location.pathname.split('/').filter(Boolean);
-        if (pathParts.length >= 3 && !['superadmin', 'admin', 'teacher', 'student', 'login'].includes(pathParts[0])) {
+        if (
+            pathParts.length >= 3 &&
+            !['superadmin', 'admin', 'teacher', 'student', 'login'].includes(pathParts[0])
+        ) {
             schoolSlug = pathParts[0];
         }
     }
@@ -36,7 +32,6 @@ const Sidebar = () => {
         { name: '🏫 Schools Management', path: '/superadmin/schools' },
     ];
 
-    // ✅ Admin Menu — mode-based labels
     const adminMenu = [
         { name: 'Dashboard', path: `${prefix}/admin/dashboard` },
         { name: t.students, path: `${prefix}/admin/students` },
@@ -61,7 +56,6 @@ const Sidebar = () => {
         { name: '📢 Broadcast', path: `${prefix}/admin/broadcast` },
     ];
 
-    // ✅ Teacher Menu — mode-based labels
     const teacherMenu = [
         { name: 'Dashboard', path: `${prefix}/teacher/dashboard` },
         { name: `My ${t.classes}`, path: `${prefix}/teacher/my-classes` },
@@ -76,7 +70,6 @@ const Sidebar = () => {
         { name: '💬 Message Parent', path: `${prefix}/teacher/message-parent` },
     ];
 
-    // ✅ Student Menu — mode-based labels
     const studentMenu = [
         { name: 'Dashboard', path: `${prefix}/student/dashboard` },
         { name: `My ${t.attendance}`, path: `${prefix}/student/my-attendance` },
@@ -109,24 +102,25 @@ const Sidebar = () => {
         roleLabel = 'Admin';
     }
 
-    const handleLogout = () => {
-        clearToken(role);
-        const slug = schoolSlug || null;
-        navigate(slug ? `/${slug}/login` : '/login');
+    // ✅ Logout — context se
+    const handleLogout = async () => {
+        await logout();   // Backend cookie clear karega + redirect
     };
 
     return (
-        <div style={{
-            width: '250px',
-            backgroundColor: '#1e293b',
-            color: 'white',
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-        }}>
+        <div
+            style={{
+                width: '250px',
+                backgroundColor: '#1e293b',
+                color: 'white',
+                height: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'fixed',
+                left: 0,
+                top: 0,
+            }}
+        >
             <div style={{ padding: '20px', borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <h2 style={{ margin: 0, fontSize: '20px' }}>
                     {modeIcon} {user?.school_name || 'School ERP'}
@@ -136,12 +130,14 @@ const Sidebar = () => {
                 </p>
             </div>
 
-            <nav style={{
-                flex: 1,
-                padding: '12px',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-            }}>
+            <nav
+                style={{
+                    flex: 1,
+                    padding: '12px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                }}
+            >
                 {menuItems.map((item) => (
                     <NavLink
                         key={item.path}
