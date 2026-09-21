@@ -1,6 +1,8 @@
 // src/utils/terminology.js
 // Multi-Institute Terminology System
 
+import { useAuth } from '../context/AuthContext';
+
 export const TERMS = {
     school: {
         class: 'Class', classes: 'Classes',
@@ -96,10 +98,16 @@ export const getModeName = (mode = 'school') => {
     return names[mode] || names.school;
 };
 
+// ✅ React Hook — mode-based terms
+export const useTerms = () => {
+    const { user } = useAuth();
+    const mode = user?.institute_type || 'school';
+    return TERMS[mode] || TERMS.school;
+};
+
 export const AVAILABLE_MODES = [
     { value: 'school', label: '🏫 School', description: 'Class, Section, Teacher' },
     { value: 'academy', label: '📚 Academy / Coaching', description: 'Batch, Slot, Instructor' },
     { value: 'college', label: '🎓 College', description: 'Program, Group, Faculty' },
     { value: 'madrassa', label: '🕌 Madrassa', description: 'Level, Group, Ustad' },
 ];
-
