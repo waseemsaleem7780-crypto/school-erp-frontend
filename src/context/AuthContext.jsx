@@ -54,8 +54,10 @@ export const AuthProvider = ({ children }) => {
                 role: res.data.role,
                 school_id: res.data.school_id,
                 school_slug: res.data.school_slug,
+                school_name: res.data.school_name,                    // ✅ NEW
                 student_id: res.data.student_id,
                 teacher_id: res.data.teacher_id,
+                institute_type: res.data.institute_type || 'school',  // ✅ NEW
             });
             setToken(activeToken);
         } catch (err) {
@@ -92,7 +94,7 @@ export const AuthProvider = ({ children }) => {
             setToken(null);
 
             const response = await api.post('/auth/login', { email, password });
-            const { access_token, role, user_name } = response.data;
+            const { access_token, role, user_name, institute_type } = response.data;
 
             // ✅ Role-specific token save karo
             saveToken(role, access_token);
@@ -109,8 +111,10 @@ export const AuthProvider = ({ children }) => {
                     role: meRes.data.role,
                     school_id: meRes.data.school_id,
                     school_slug: meRes.data.school_slug,
+                    school_name: meRes.data.school_name,                    // ✅ NEW
                     student_id: meRes.data.student_id,
                     teacher_id: meRes.data.teacher_id,
+                    institute_type: meRes.data.institute_type || 'school',  // ✅ NEW
                 });
             } catch {
                 setUser({
@@ -119,10 +123,17 @@ export const AuthProvider = ({ children }) => {
                     full_name: user_name,
                     role: role || payload?.role,
                     school_id: payload?.school_id,
+                    school_slug: payload?.school_slug,
+                    institute_type: institute_type || payload?.institute_type || 'school',  // ✅ NEW
                 });
             }
 
-            return { success: true, role, school_slug: payload?.school_slug };
+            return {
+                success: true,
+                role,
+                school_slug: payload?.school_slug,
+                institute_type: institute_type || payload?.institute_type || 'school',  // ✅ NEW
+            };
         } catch (error) {
             return {
                 success: false,

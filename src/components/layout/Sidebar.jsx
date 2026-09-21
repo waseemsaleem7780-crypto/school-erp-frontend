@@ -1,10 +1,14 @@
 import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { getToken, clearToken } from '../../utils/authStorage';
+import { useTerms, getModeIcon } from '../../utils/terminology';
+import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const params = useParams();
+    const { user } = useAuth();
+    const t = useTerms();  // ✅ Mode-based terms
     const token = getToken();
 
     let role = 'admin';
@@ -25,59 +29,64 @@ const Sidebar = () => {
     }
 
     const prefix = schoolSlug ? `/${schoolSlug}` : '';
+    const instituteType = user?.institute_type || 'school';
+    const modeIcon = getModeIcon(instituteType);
 
     const superAdminMenu = [
-        { name: 'Schools Management', path: '/superadmin/schools' },
+        { name: '🏫 Schools Management', path: '/superadmin/schools' },
     ];
 
+    // ✅ Admin Menu — mode-based labels
     const adminMenu = [
         { name: 'Dashboard', path: `${prefix}/admin/dashboard` },
-        { name: 'Students', path: `${prefix}/admin/students` },
-        { name: 'Classes', path: `${prefix}/admin/classes` },
-        { name: 'Sections', path: `${prefix}/admin/sections` },
-        { name: 'Subjects', path: `${prefix}/admin/subjects` },
-        { name: 'Teachers', path: `${prefix}/admin/teachers` },
-        { name: 'Attendance', path: `${prefix}/admin/attendance` },
-        { name: 'Fees', path: `${prefix}/admin/fees` },
+        { name: t.students, path: `${prefix}/admin/students` },
+        { name: t.classes, path: `${prefix}/admin/classes` },
+        { name: t.sections, path: `${prefix}/admin/sections` },
+        { name: t.subjects, path: `${prefix}/admin/subjects` },
+        { name: t.teachers, path: `${prefix}/admin/teachers` },
+        { name: t.attendance, path: `${prefix}/admin/attendance` },
+        { name: t.fees, path: `${prefix}/admin/fees` },
         { name: 'Concession', path: `${prefix}/admin/concession` },
-        { name: 'Homework', path: `${prefix}/admin/homework` },
+        { name: t.homework, path: `${prefix}/admin/homework` },
         { name: 'Assignments', path: `${prefix}/admin/assignments` },
-        { name: 'Exams', path: `${prefix}/admin/exams` },
-        { name: 'Results', path: `${prefix}/admin/results` },
-        { name: 'Notice Board', path: `${prefix}/admin/notice-board` },
-        { name: 'Study Material', path: `${prefix}/admin/study-material` },
-        { name: 'Guardians', path: `${prefix}/admin/guardians` },
-        { name: 'Timetable', path: `${prefix}/admin/timetable` },
+        { name: t.exams, path: `${prefix}/admin/exams` },
+        { name: t.results, path: `${prefix}/admin/results` },
+        { name: t.noticeBoard, path: `${prefix}/admin/notice-board` },
+        { name: t.studyMaterial, path: `${prefix}/admin/study-material` },
+        { name: t.guardians, path: `${prefix}/admin/guardians` },
+        { name: t.timetable, path: `${prefix}/admin/timetable` },
         { name: 'Academic Years', path: `${prefix}/admin/academic-years` },
-        { name: 'School Settings', path: `${prefix}/admin/settings` },
+        { name: 'Settings', path: `${prefix}/admin/settings` },
         { name: 'Analytics', path: `${prefix}/admin/analytics` },
         { name: '📢 Broadcast', path: `${prefix}/admin/broadcast` },
     ];
 
+    // ✅ Teacher Menu — mode-based labels
     const teacherMenu = [
         { name: 'Dashboard', path: `${prefix}/teacher/dashboard` },
-        { name: 'My Classes', path: `${prefix}/teacher/my-classes` },
-        { name: 'My Students', path: `${prefix}/teacher/my-students` },
-        { name: 'Mark Attendance', path: `${prefix}/teacher/mark-attendance` },
-        { name: 'Homework', path: `${prefix}/teacher/homework` },
+        { name: `My ${t.classes}`, path: `${prefix}/teacher/my-classes` },
+        { name: `My ${t.students}`, path: `${prefix}/teacher/my-students` },
+        { name: `Mark ${t.attendance}`, path: `${prefix}/teacher/mark-attendance` },
+        { name: t.homework, path: `${prefix}/teacher/homework` },
         { name: 'Assignments', path: `${prefix}/teacher/assignments` },
-        { name: 'Marks Entry', path: `${prefix}/teacher/marks-entry` },
-        { name: 'Timetable', path: `${prefix}/teacher/timetable` },
-        { name: 'Study Material', path: `${prefix}/teacher/study-material` },
-        { name: 'Notice Board', path: `${prefix}/teacher/notice-board` },
+        { name: `${t.marks} Entry`, path: `${prefix}/teacher/marks-entry` },
+        { name: t.timetable, path: `${prefix}/teacher/timetable` },
+        { name: t.studyMaterial, path: `${prefix}/teacher/study-material` },
+        { name: t.noticeBoard, path: `${prefix}/teacher/notice-board` },
         { name: '💬 Message Parent', path: `${prefix}/teacher/message-parent` },
     ];
 
+    // ✅ Student Menu — mode-based labels
     const studentMenu = [
         { name: 'Dashboard', path: `${prefix}/student/dashboard` },
-        { name: 'My Attendance', path: `${prefix}/student/my-attendance` },
-        { name: 'My Homework', path: `${prefix}/student/my-homework` },
+        { name: `My ${t.attendance}`, path: `${prefix}/student/my-attendance` },
+        { name: `My ${t.homework}`, path: `${prefix}/student/my-homework` },
         { name: 'My Assignments', path: `${prefix}/student/my-assignments` },
-        { name: 'My Timetable', path: `${prefix}/student/my-timetable` },
-        { name: 'My Results', path: `${prefix}/student/my-results` },
-        { name: 'My Fees', path: `${prefix}/student/my-fees` },
-        { name: 'Study Material', path: `${prefix}/student/study-material` },
-        { name: 'Notice Board', path: `${prefix}/student/notice-board` },
+        { name: `My ${t.timetable}`, path: `${prefix}/student/my-timetable` },
+        { name: `My ${t.results}`, path: `${prefix}/student/my-results` },
+        { name: `My ${t.fees}`, path: `${prefix}/student/my-fees` },
+        { name: t.studyMaterial, path: `${prefix}/student/study-material` },
+        { name: t.noticeBoard, path: `${prefix}/student/notice-board` },
     ];
 
     let menuItems = [];
@@ -119,7 +128,9 @@ const Sidebar = () => {
             top: 0,
         }}>
             <div style={{ padding: '20px', borderBottom: '1px solid #334155', flexShrink: 0 }}>
-                <h2 style={{ margin: 0, fontSize: '20px' }}>School ERP</h2>
+                <h2 style={{ margin: 0, fontSize: '20px' }}>
+                    {modeIcon} {user?.school_name || 'School ERP'}
+                </h2>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
                     {roleLabel} Panel
                 </p>
