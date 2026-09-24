@@ -3,7 +3,7 @@ import api from '../../api/axios';
 import { useTerms } from '../../utils/terminology';
 
 const TeacherHomework = () => {
-    const t = useTerms();   // ✅ Mode-based labels
+    const t = useTerms();
     const [classes, setClasses] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [students, setStudents] = useState([]);
@@ -32,15 +32,18 @@ const TeacherHomework = () => {
         }
     }, [form.class_id]);
 
+    // ✅ FIX: Sirf teacher ki assigned classes
     const fetchData = async () => {
         try {
-            const c = await api.get('/classes/');
-            setClasses(c.data);
-            if (c.data.length > 0) {
-                setForm((prev) => ({ ...prev, class_id: String(c.data[0].id) }));
+            const c = await api.get('/teachers/my-classes');   // ✅ Assigned classes
+            const data = Array.isArray(c.data) ? c.data : [];
+            setClasses(data);
+            if (data.length > 0) {
+                setForm((prev) => ({ ...prev, class_id: String(data[0].id) }));
             }
         } catch (err) {
-            console.error(err);
+            console.error('fetchData error:', err);
+            setClasses([]);
         }
     };
 
@@ -52,7 +55,7 @@ const TeacherHomework = () => {
             } catch (e) {
                 res = await api.get(`/subjects/${classId}`);
             }
-            setSubjects(res.data);
+            setSubjects(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setSubjects([]);
         }
@@ -66,7 +69,7 @@ const TeacherHomework = () => {
             } catch (e) {
                 res = await api.get(`/students/${classId}`);
             }
-            setStudents(res.data);
+            setStudents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setStudents([]);
         }
@@ -96,7 +99,6 @@ const TeacherHomework = () => {
             const res = await api.post('/homework/bulk', {
                 class_id: parseInt(form.class_id),
                 subject_id: parseInt(form.subject_id),
-                teacher_id: 0,
                 title: form.title,
                 description: form.description,
                 deadline: form.deadline,
@@ -155,56 +157,72 @@ const TeacherHomework = () => {
                 </div>
             )}
 
-            {showForm && (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Assign New {t.homework}</h3>
-                    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select {t.class}</option>
-                                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
-                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select {t.subject}</option>
-                                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
-                            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="all">📚 All {t.students} ({students.length})</option>
-                                {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
-                            </select>
-                        </div>
-
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Title</label>
-                            <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g., Algebra Exercise 5.1" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                        </div>
-
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Description</label>
-                            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Arial' }} required />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Deadline</label>
-                            <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                        </div>
-
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                {loading ? 'Assigning...' : `💾 Assign ${t.homework}`}
-                            </button>
-                        </div>
-                    </form>
+            {/* ✅ Empty state — koi class assign nahi */}
+            {classes.length === 0 ? (
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px',
+                    textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
+                    <p style={{ color: '#718096' }}>No {t.classes.toLowerCase()} assigned yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Admin se contact karo — wo aap ko {t.classes.toLowerCase()} assign karega
+                    </p>
                 </div>
+            ) : (
+                <>
+                    {showForm && (
+                        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                            <h3 style={{ marginTop: 0, color: '#1a202c' }}>Assign New {t.homework}</h3>
+                            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
+                                    <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                                        <option value="">Select {t.class}</option>
+                                        {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
+                                    <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                                        <option value="">Select {t.subject}</option>
+                                        {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
+                                    <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                                        <option value="all">📚 All {t.students} ({students.length})</option>
+                                        {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
+                                    </select>
+                                </div>
+
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Title</label>
+                                    <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g., Algebra Exercise 5.1" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                </div>
+
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Description</label>
+                                    <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Arial' }} required />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Deadline</label>
+                                    <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                </div>
+
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                                        {loading ? 'Assigning...' : `💾 Assign ${t.homework}`}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                </>
             )}
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
