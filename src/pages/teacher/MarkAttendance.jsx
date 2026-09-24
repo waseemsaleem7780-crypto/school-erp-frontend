@@ -3,7 +3,7 @@ import api from '../../api/axios';
 import { useTerms } from '../../utils/terminology';
 
 const MarkAttendance = () => {
-    const t = useTerms();   // ✅ Mode-based labels
+    const t = useTerms();
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
@@ -30,23 +30,25 @@ const MarkAttendance = () => {
         }
     }, [form.class_id]);
 
+    // ✅ FIX: Sirf assigned classes + teachers list
     const fetchData = async () => {
         try {
             const [c, tch] = await Promise.all([
-                api.get('/classes/'),
-                api.get('/teachers/'),
+                api.get('/teachers/my-classes'),   // ✅ Assigned classes
+                api.get('/teachers/'),             // All teachers (for marked_by)
             ]);
-            setClasses(c.data);
-            setTeachers(tch.data);
+            setClasses(Array.isArray(c.data) ? c.data : []);
+            setTeachers(Array.isArray(tch.data) ? tch.data : []);
         } catch (err) {
-            console.error(err);
+            console.error('fetchData error:', err);
+            setClasses([]);
         }
     };
 
     const fetchSections = async (classId) => {
         try {
             const res = await api.get(`/sections/${classId}`);
-            setSections(res.data);
+            setSections(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setSections([]);
         }
@@ -54,8 +56,13 @@ const MarkAttendance = () => {
 
     const fetchStudents = async (classId) => {
         try {
-            const res = await api.get(`/students/${classId}`);
-            setStudents(res.data);
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
+            setStudents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setStudents([]);
         }
@@ -130,122 +137,135 @@ const MarkAttendance = () => {
                 </div>
             )}
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '32px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            }}>
-                <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
-                            <select
-                                value={form.class_id}
-                                onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '', student_id: '' })}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                required
-                            >
-                                <option value="">Select {t.class}</option>
-                                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+            {classes.length === 0 ? (
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px',
+                    textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
+                    <p style={{ color: '#718096' }}>No {t.classes.toLowerCase()} assigned yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Admin se contact karo — wo aap ko {t.classes.toLowerCase()} assign karega
+                    </p>
+                </div>
+            ) : (
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    padding: '32px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <form onSubmit={handleSubmit}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
+                                <select
+                                    value={form.class_id}
+                                    onChange={(e) => setForm({ ...form, class_id: e.target.value, section_id: '', student_id: '' })}
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                                    required
+                                >
+                                    <option value="">Select {t.class}</option>
+                                    {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.section}</label>
+                                <select
+                                    value={form.section_id}
+                                    onChange={(e) => setForm({ ...form, section_id: e.target.value })}
+                                    disabled={!form.class_id}
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                >
+                                    <option value="">Select {t.section}</option>
+                                    {sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
+                                <select
+                                    value={form.student_id}
+                                    onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                                    disabled={!form.class_id}
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
+                                    required
+                                >
+                                    <option value="">Select {t.student}</option>
+                                    {students.length > 0 && (
+                                        <option value="all" style={{ fontWeight: 'bold', color: '#667eea' }}>
+                                            ✅ All {t.students} ({students.length})
+                                        </option>
+                                    )}
+                                    {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.teacher}</label>
+                                <select
+                                    value={form.teacher_id}
+                                    onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                                    required
+                                >
+                                    <option value="">Select {t.teacher}</option>
+                                    {teachers.map((tch) => <option key={tch.id} value={tch.id}>{tch.qualification} (ID: {tch.id})</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Date</label>
+                                <input
+                                    type="date"
+                                    value={form.date}
+                                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Status</label>
+                                <select
+                                    value={form.status}
+                                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                    style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                                    required
+                                >
+                                    <option value="Present">✅ Present</option>
+                                    <option value="Absent">❌ Absent</option>
+                                    <option value="Half-Day">⏰ Half Day</option>
+                                    <option value="Leave">🏖️ Leave</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.section}</label>
-                            <select
-                                value={form.section_id}
-                                onChange={(e) => setForm({ ...form, section_id: e.target.value })}
-                                disabled={!form.class_id}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
-                            >
-                                <option value="">Select {t.section}</option>
-                                {sections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
-                            <select
-                                value={form.student_id}
-                                onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                                disabled={!form.class_id}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }}
-                                required
-                            >
-                                <option value="">Select {t.student}</option>
-                                {students.length > 0 && (
-                                    <option value="all" style={{ fontWeight: 'bold', color: '#667eea' }}>
-                                        ✅ All {t.students} ({students.length})
-                                    </option>
-                                )}
-                                {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.teacher}</label>
-                            <select
-                                value={form.teacher_id}
-                                onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                required
-                            >
-                                <option value="">Select {t.teacher}</option>
-                                {teachers.map((tch) => <option key={tch.id} value={tch.id}>{tch.qualification} (ID: {tch.id})</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Date</label>
-                            <input
-                                type="date"
-                                value={form.date}
-                                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Status</label>
-                            <select
-                                value={form.status}
-                                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                                style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
-                                required
-                            >
-                                <option value="Present">✅ Present</option>
-                                <option value="Absent">❌ Absent</option>
-                                <option value="Half-Day">⏰ Half Day</option>
-                                <option value="Leave">🏖️ Leave</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            padding: '14px 32px',
-                            fontSize: '15px',
-                            fontWeight: '600',
-                            color: 'white',
-                            background: loading ? '#a0aec0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            border: 'none',
-                            borderRadius: '10px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                        }}
-                    >
-                        {loading
-                            ? 'Marking...'
-                            : form.student_id === 'all'
-                                ? `✓ Mark All (${students.length})`
-                                : `✓ Mark ${t.attendance}`}
-                    </button>
-                </form>
-            </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                padding: '14px 32px',
+                                fontSize: '15px',
+                                fontWeight: '600',
+                                color: 'white',
+                                background: loading ? '#a0aec0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                border: 'none',
+                                borderRadius: '10px',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                            }}
+                        >
+                            {loading
+                                ? 'Marking...'
+                                : form.student_id === 'all'
+                                    ? `✓ Mark All (${students.length})`
+                                    : `✓ Mark ${t.attendance}`}
+                        </button>
+                    </form>
+                </div>
+            )}
         </div>
     );
 };
