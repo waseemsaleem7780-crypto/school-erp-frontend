@@ -3,8 +3,9 @@ import api from '../../api/axios';
 import { useTerms } from '../../utils/terminology';
 
 const Teachers = () => {
-    const t = useTerms();   // ✅ Mode-based labels
+    const t = useTerms();
     const [teachers, setTeachers] = useState([]);
+    const [classes, setClasses] = useState([]);   // ✅ NEW — classes laao
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -18,10 +19,12 @@ const Teachers = () => {
         password: '',
         qualification: '',
         phone: '',
+        class_ids: [],   // ✅ NEW — assigned classes
     });
 
     useEffect(() => {
         fetchTeachers();
+        fetchClasses();   // ✅ NEW
     }, []);
 
     const fetchTeachers = async () => {
@@ -35,6 +38,16 @@ const Teachers = () => {
         }
     };
 
+    // ✅ NEW — classes laao
+    const fetchClasses = async () => {
+        try {
+            const res = await api.get('/classes/');
+            setClasses(res.data);
+        } catch (err) {
+            console.error('Classes fetch error:', err);
+        }
+    };
+
     const filteredTeachers = teachers.filter((tch) =>
         (tch.teacher_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (tch.teacher_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,6 +57,16 @@ const Teachers = () => {
         tch.user_id.toString().includes(searchTerm)
     );
 
+    // ✅ NEW — class checkbox toggle
+    const toggleClass = (classId) => {
+        setForm((prev) => {
+            const classIds = prev.class_ids.includes(classId)
+                ? prev.class_ids.filter((id) => id !== classId)
+                : [...prev.class_ids, classId];
+            return { ...prev, class_ids: classIds };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -51,24 +74,36 @@ const Teachers = () => {
 
         try {
             if (editingId) {
+                // Edit — sirf basic fields
                 await api.put(`/teachers/${editingId}`, {
                     user_id: 1,
                     qualification: form.qualification,
                     phone: form.phone || null,
                     password: form.password || null,
                 });
+
+                // ✅ Classes update karo
+                await api.put(`/teachers/${editingId}/classes`, {
+                    class_ids: form.class_ids,
+                });
+
                 setMessage({ type: 'success', text: `${t.teacher} updated! ✅` });
             } else {
+                // Create — classes ke saath
                 await api.post('/teachers/create-with-user', {
                     full_name: form.full_name,
                     email: form.email,
                     password: form.password,
                     qualification: form.qualification,
                     phone: form.phone || null,
+                    class_ids: form.class_ids,   // ✅ Classes bhejo
                 });
-                setMessage({ type: 'success', text: `${t.teacher} created! ✅` });
+                setMessage({
+                    type: 'success',
+                    text: `${t.teacher} created with ${form.class_ids.length} ${t.classes.toLowerCase()}! ✅`
+                });
             }
-            setForm({ full_name: '', email: '', password: '', qualification: '', phone: '' });
+            setForm({ full_name: '', email: '', password: '', qualification: '', phone: '', class_ids: [] });
             setEditingId(null);
             fetchTeachers();
             setTimeout(() => {
@@ -86,12 +121,16 @@ const Teachers = () => {
     };
 
     const handleEdit = (teacher) => {
+        // ✅ Purani assigned classes pre-select karo
+        const currentClassIds = (teacher.assigned_classes || []).map((c) => c.class_id);
+        
         setForm({
             full_name: teacher.teacher_name || '',
             email: teacher.teacher_email || '',
             password: '',
             qualification: teacher.qualification,
             phone: teacher.teacher_phone !== '—' ? teacher.teacher_phone : '',
+            class_ids: currentClassIds,
         });
         setEditingId(teacher.id);
         setActiveTab('add');
@@ -111,7 +150,7 @@ const Teachers = () => {
     };
 
     const handleCancel = () => {
-        setForm({ full_name: '', email: '', password: '', qualification: '', phone: '' });
+        setForm({ full_name: '', email: '', password: '', qualification: '', phone: '', class_ids: [] });
         setEditingId(null);
         setActiveTab('list');
     };
@@ -123,25 +162,17 @@ const Teachers = () => {
                 <p style={{ color: '#718096', margin: 0 }}>Manage all teaching staff</p>
             </div>
 
+            {/* TABS */}
             <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginBottom: '24px',
-                backgroundColor: 'white',
-                padding: '8px',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                width: 'fit-content',
+                display: 'flex', gap: '8px', marginBottom: '24px',
+                backgroundColor: 'white', padding: '8px', borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)', width: 'fit-content',
             }}>
                 <button
                     onClick={() => { setActiveTab('list'); handleCancel(); }}
                     style={{
-                        padding: '10px 24px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
+                        padding: '10px 24px', fontSize: '14px', fontWeight: '600',
+                        border: 'none', borderRadius: '8px', cursor: 'pointer',
                         backgroundColor: activeTab === 'list' ? '#667eea' : 'transparent',
                         color: activeTab === 'list' ? 'white' : '#4a5568',
                     }}
@@ -149,14 +180,14 @@ const Teachers = () => {
                     📋 All {t.teachers} ({teachers.length})
                 </button>
                 <button
-                    onClick={() => { setActiveTab('add'); setEditingId(null); setForm({ full_name: '', email: '', password: '', qualification: '', phone: '' }); }}
+                    onClick={() => {
+                        setActiveTab('add');
+                        setEditingId(null);
+                        setForm({ full_name: '', email: '', password: '', qualification: '', phone: '', class_ids: [] });
+                    }}
                     style={{
-                        padding: '10px 24px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
+                        padding: '10px 24px', fontSize: '14px', fontWeight: '600',
+                        border: 'none', borderRadius: '8px', cursor: 'pointer',
                         backgroundColor: activeTab === 'add' ? '#667eea' : 'transparent',
                         color: activeTab === 'add' ? 'white' : '#4a5568',
                     }}
@@ -167,9 +198,7 @@ const Teachers = () => {
 
             {message.text && (
                 <div style={{
-                    padding: '14px 20px',
-                    borderRadius: '10px',
-                    marginBottom: '20px',
+                    padding: '14px 20px', borderRadius: '10px', marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
                 }}>
@@ -177,13 +206,11 @@ const Teachers = () => {
                 </div>
             )}
 
+            {/* ADD / EDIT TAB */}
             {activeTab === 'add' && (
                 <div style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    marginBottom: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    backgroundColor: 'white', borderRadius: '16px', padding: '24px',
+                    marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
                         {editingId ? `✏️ Edit ${t.teacher}` : `➕ Add New ${t.teacher}`}
@@ -254,18 +281,88 @@ const Teachers = () => {
                             />
                         </div>
 
+                        {/* ✅ NEW — Class Assignment Section */}
+                        <div style={{
+                            gridColumn: '1 / -1',
+                            padding: '20px',
+                            backgroundColor: '#f0f4ff',
+                            borderRadius: '12px',
+                            border: '2px solid #c3dafe',
+                        }}>
+                            <h4 style={{ margin: '0 0 12px 0', color: '#2d3748', fontSize: '15px' }}>
+                                🎓 Assign {t.classes} to {t.teacher} ({form.class_ids.length} selected)
+                            </h4>
+                            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#4a5568' }}>
+                                Jin {t.classes.toLowerCase()} ko padhana hai wo tick karo:
+                            </p>
+
+                            {classes.length === 0 ? (
+                                <p style={{ color: '#e53e3e', fontSize: '13px' }}>
+                                    Koi {t.class.toLowerCase()} nahi mili — pehle {t.classes} page se add karo
+                                </p>
+                            ) : (
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    gap: '12px',
+                                }}>
+                                    {classes.map((c) => (
+                                        <label
+                                            key={c.id}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '10px',
+                                                padding: '12px 16px',
+                                                border: '2px solid',
+                                                borderColor: form.class_ids.includes(c.id) ? '#667eea' : '#e2e8f0',
+                                                borderRadius: '10px',
+                                                cursor: 'pointer',
+                                                backgroundColor: form.class_ids.includes(c.id) ? 'white' : '#f7fafc',
+                                                transition: 'all 0.2s',
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={form.class_ids.includes(c.id)}
+                                                onChange={() => toggleClass(c.id)}
+                                                style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+                                            />
+                                            <span style={{
+                                                fontSize: '14px',
+                                                fontWeight: '600',
+                                                color: form.class_ids.includes(c.id) ? '#2d3748' : '#718096',
+                                            }}>
+                                                {c.name}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+
+                            {form.class_ids.length > 0 && (
+                                <p style={{
+                                    margin: '12px 0 0 0',
+                                    fontSize: '13px',
+                                    color: '#22543d',
+                                    fontWeight: '600',
+                                }}>
+                                    ✅ Selected: {classes
+                                        .filter((c) => form.class_ids.includes(c.id))
+                                        .map((c) => c.name)
+                                        .join(', ')}
+                                </p>
+                            )}
+                        </div>
+
                         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
                             <button
                                 type="submit"
                                 disabled={loading}
                                 style={{
-                                    padding: '14px 32px',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    color: 'white',
-                                    background: loading ? '#a0aec0' : '#48bb78',
-                                    border: 'none',
-                                    borderRadius: '10px',
+                                    padding: '14px 32px', fontSize: '15px', fontWeight: '600',
+                                    color: 'white', background: loading ? '#a0aec0' : '#48bb78',
+                                    border: 'none', borderRadius: '10px',
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                 }}
                             >
@@ -275,14 +372,9 @@ const Teachers = () => {
                                 type="button"
                                 onClick={handleCancel}
                                 style={{
-                                    padding: '14px 32px',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    color: '#4a5568',
-                                    background: '#e2e8f0',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    cursor: 'pointer',
+                                    padding: '14px 32px', fontSize: '15px', fontWeight: '600',
+                                    color: '#4a5568', background: '#e2e8f0',
+                                    border: 'none', borderRadius: '10px', cursor: 'pointer',
                                 }}
                             >
                                 ✕ Cancel
@@ -292,17 +384,13 @@ const Teachers = () => {
                 </div>
             )}
 
+            {/* LIST TAB */}
             {activeTab === 'list' && (
                 <>
                     <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '16px',
-                        padding: '24px',
-                        marginBottom: '24px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
+                        backgroundColor: 'white', borderRadius: '16px', padding: '24px',
+                        marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                        display: 'flex', alignItems: 'center', gap: '16px',
                     }}>
                         <div style={{ fontSize: '36px' }}>👨‍🏫</div>
                         <div>
@@ -313,7 +401,10 @@ const Teachers = () => {
                         </div>
                     </div>
 
-                    <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px',
+                        marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    }}>
                         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
                             🔎 Search {t.teachers}
                         </label>
@@ -323,18 +414,17 @@ const Teachers = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by name, email, phone, qualification, ID..."
                             style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                fontSize: '15px',
-                                border: '2px solid #e2e8f0',
-                                borderRadius: '10px',
-                                outline: 'none',
-                                boxSizing: 'border-box',
+                                width: '100%', padding: '12px 16px', fontSize: '15px',
+                                border: '2px solid #e2e8f0', borderRadius: '10px',
+                                outline: 'none', boxSizing: 'border-box',
                             }}
                         />
                     </div>
 
-                    <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: '16px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden',
+                    }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
                             <h3 style={{ margin: 0, color: '#1a202c' }}>All {t.teachers} ({filteredTeachers.length})</h3>
                         </div>
@@ -356,9 +446,8 @@ const Teachers = () => {
                                             <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
                                             <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.teacher} Name</th>
                                             <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Email</th>
-                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Phone</th>
                                             <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Qualification</th>
-                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Hired Date</th>
+                                            <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Assigned {t.classes}</th>
                                             <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Actions</th>
                                         </tr>
                                     </thead>
@@ -372,26 +461,41 @@ const Teachers = () => {
                                                 <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
                                                     {tch.teacher_email || '—'}
                                                 </td>
-                                                <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                                    📱 {tch.teacher_phone || '—'}
-                                                </td>
                                                 <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{tch.qualification}</td>
-                                                <td style={{ padding: '16px 24px', color: '#718096', fontSize: '13px' }}>
-                                                    {tch.hired_date ? new Date(tch.hired_date).toLocaleDateString() : 'N/A'}
+
+                                                {/* ✅ NEW — Assigned classes column */}
+                                                <td style={{ padding: '16px 24px' }}>
+                                                    {(tch.assigned_classes && tch.assigned_classes.length > 0) ? (
+                                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                            {tch.assigned_classes.map((cls) => (
+                                                                <span
+                                                                    key={cls.class_id}
+                                                                    style={{
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: '12px',
+                                                                        backgroundColor: '#ebf8ff',
+                                                                        color: '#2c5282',
+                                                                        fontSize: '12px',
+                                                                        fontWeight: '600',
+                                                                    }}
+                                                                >
+                                                                    {cls.class_name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#a0aec0', fontSize: '12px' }}>No {t.classes.toLowerCase()} assigned</span>
+                                                    )}
                                                 </td>
+
                                                 <td style={{ padding: '16px 24px' }}>
                                                     <div style={{ display: 'flex', gap: '8px' }}>
                                                         <button
                                                             onClick={() => handleEdit(tch)}
                                                             style={{
-                                                                padding: '6px 14px',
-                                                                fontSize: '13px',
-                                                                fontWeight: '600',
-                                                                color: 'white',
-                                                                background: '#667eea',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
+                                                                padding: '6px 14px', fontSize: '13px', fontWeight: '600',
+                                                                color: 'white', background: '#667eea',
+                                                                border: 'none', borderRadius: '6px', cursor: 'pointer',
                                                             }}
                                                         >
                                                             ✏️ Edit
@@ -399,14 +503,9 @@ const Teachers = () => {
                                                         <button
                                                             onClick={() => handleDelete(tch.id)}
                                                             style={{
-                                                                padding: '6px 14px',
-                                                                fontSize: '13px',
-                                                                fontWeight: '600',
-                                                                color: 'white',
-                                                                background: '#dc2626',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
+                                                                padding: '6px 14px', fontSize: '13px', fontWeight: '600',
+                                                                color: 'white', background: '#dc2626',
+                                                                border: 'none', borderRadius: '6px', cursor: 'pointer',
                                                             }}
                                                         >
                                                             🗑️ Delete
