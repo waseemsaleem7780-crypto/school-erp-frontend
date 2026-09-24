@@ -3,7 +3,7 @@ import api from '../../api/axios';
 import { useTerms } from '../../utils/terminology';
 
 const MarksEntry = () => {
-    const t = useTerms();   // ✅ Mode-based labels
+    const t = useTerms();
     const [classes, setClasses] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [students, setStudents] = useState([]);
@@ -23,7 +23,7 @@ const MarksEntry = () => {
     const [showForm, setShowForm] = useState(false);
 
     useEffect(() => {
-        fetchClasses();
+        fetchMyClasses();
     }, []);
 
     useEffect(() => {
@@ -35,15 +35,18 @@ const MarksEntry = () => {
         }
     }, [form.class_id]);
 
-    const fetchClasses = async () => {
+    // ✅ FIX: Sirf teacher ki assigned classes
+    const fetchMyClasses = async () => {
         try {
-            const res = await api.get('/classes/');
-            setClasses(res.data);
-            if (res.data.length > 0) {
-                setForm((prev) => ({ ...prev, class_id: String(res.data[0].id) }));
+            const res = await api.get('/teachers/my-classes');   // ✅ Assigned
+            const data = Array.isArray(res.data) ? res.data : [];
+            setClasses(data);
+            if (data.length > 0) {
+                setForm((prev) => ({ ...prev, class_id: String(data[0].id) }));
             }
         } catch (err) {
-            console.error(err);
+            console.error('fetchMyClasses error:', err);
+            setClasses([]);
         }
     };
 
@@ -192,73 +195,89 @@ const MarksEntry = () => {
                 </div>
             )}
 
-            {showForm && (
-                <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-                    <h3 style={{ marginTop: 0, color: '#1a202c' }}>Enter {t.student} {t.marks}</h3>
-                    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
-                            <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: 'all', subject_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select {t.class}</option>
-                                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.exam}</label>
-                            <select value={form.exam_id} onChange={(e) => setForm({ ...form, exam_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select {t.exam}</option>
-                                {exams.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
-                            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="all">📚 All {t.students} ({students.length})</option>
-                                {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
-                            <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select {t.subject}</option>
-                                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                            {form.class_id && subjects.length === 0 && (
-                                <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>
-                                    Is {t.class.toLowerCase()} mein koi {t.subject.toLowerCase()} nahi — admin se add karwao
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.marks} Obtained</label>
-                            <input type="number" step="0.5" value={form.marks_obtained} onChange={(e) => setForm({ ...form, marks_obtained: e.target.value })} placeholder="85" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Grade</label>
-                            <input type="text" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} placeholder="A+" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                        </div>
-
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Remarks</label>
-                            <input type="text" value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Excellent work" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
-                        </div>
-
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                {loading
-                                    ? 'Saving...'
-                                    : form.student_id === 'all'
-                                        ? `💾 Save ${t.marks} for All (${students.length})`
-                                        : `💾 Save ${t.marks}`}
-                            </button>
-                        </div>
-                    </form>
+            {/* ✅ Empty state — koi class assign nahi */}
+            {classes.length === 0 ? (
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px',
+                    textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
+                    <p style={{ color: '#718096' }}>No {t.classes.toLowerCase()} assigned yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Admin se contact karo — wo aap ko {t.classes.toLowerCase()} assign karega
+                    </p>
                 </div>
+            ) : (
+                <>
+                    {showForm && (
+                        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                            <h3 style={{ marginTop: 0, color: '#1a202c' }}>Enter {t.student} {t.marks}</h3>
+                            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
+                                    <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, exam_id: '', student_id: 'all', subject_id: '' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
+                                        <option value="">Select {t.class}</option>
+                                        {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.exam}</label>
+                                    <select value={form.exam_id} onChange={(e) => setForm({ ...form, exam_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                                        <option value="">Select {t.exam}</option>
+                                        {exams.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
+                                    <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                                        <option value="all">📚 All {t.students} ({students.length})</option>
+                                        {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
+                                    <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
+                                        <option value="">Select {t.subject}</option>
+                                        {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                    {form.class_id && subjects.length === 0 && (
+                                        <p style={{ fontSize: '12px', color: '#e53e3e', margin: '4px 0 0 0' }}>
+                                            Is {t.class.toLowerCase()} mein koi {t.subject.toLowerCase()} nahi — admin se add karwao
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.marks} Obtained</label>
+                                    <input type="number" step="0.5" value={form.marks_obtained} onChange={(e) => setForm({ ...form, marks_obtained: e.target.value })} placeholder="85" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Grade</label>
+                                    <input type="text" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} placeholder="A+" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                </div>
+
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Remarks</label>
+                                    <input type="text" value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Excellent work" style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' }} required />
+                                </div>
+
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <button type="submit" disabled={loading} style={{ padding: '14px 32px', fontSize: '15px', fontWeight: '600', color: 'white', background: loading ? '#a0aec0' : '#48bb78', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                                        {loading
+                                            ? 'Saving...'
+                                            : form.student_id === 'all'
+                                                ? `💾 Save ${t.marks} for All (${students.length})`
+                                                : `💾 Save ${t.marks}`}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                </>
             )}
 
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
