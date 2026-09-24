@@ -3,7 +3,7 @@ import api from '../../api/axios';
 import { useTerms } from '../../utils/terminology';
 
 const MyStudents = () => {
-    const t = useTerms();   // ✅ Mode-based labels
+    const t = useTerms();
     const [classes, setClasses] = useState([]);
     const [sections, setSections] = useState([]);
     const [students, setStudents] = useState([]);
@@ -12,7 +12,7 @@ const MyStudents = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetchClasses();
+        fetchMyClasses();
         fetchSections();
     }, []);
 
@@ -20,13 +20,16 @@ const MyStudents = () => {
         if (selectedClass) fetchStudents(selectedClass);
     }, [selectedClass]);
 
-    const fetchClasses = async () => {
+    // ✅ FIX: Sirf teacher ki assigned classes
+    const fetchMyClasses = async () => {
         try {
-            const res = await api.get('/classes/');
-            setClasses(res.data);
-            if (res.data.length > 0) setSelectedClass(res.data[0].id);
+            const res = await api.get('/teachers/my-classes');
+            const data = Array.isArray(res.data) ? res.data : [];
+            setClasses(data);
+            if (data.length > 0) setSelectedClass(data[0].id);
         } catch (err) {
-            console.error(err);
+            console.error('My classes error:', err);
+            setClasses([]);
         } finally {
             setLoading(false);
         }
@@ -35,7 +38,7 @@ const MyStudents = () => {
     const fetchSections = async () => {
         try {
             const res = await api.get('/sections/');
-            setSections(res.data);
+            setSections(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Sections fetch failed:', err);
             setSections([]);
@@ -44,8 +47,13 @@ const MyStudents = () => {
 
     const fetchStudents = async (classId) => {
         try {
-            const res = await api.get(`/students/${classId}`);
-            setStudents(res.data);
+            let res;
+            try {
+                res = await api.get(`/students/class/${classId}`);
+            } catch (e) {
+                res = await api.get(`/students/${classId}`);
+            }
+            setStudents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setStudents([]);
         }
@@ -76,101 +84,106 @@ const MyStudents = () => {
                 </p>
             </div>
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '20px 24px',
-                marginBottom: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔍 Select {t.class}
-                </label>
-                <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    style={{
-                        width: '100%',
-                        maxWidth: '300px',
-                        padding: '12px 16px',
-                        fontSize: '15px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '10px',
-                        outline: 'none',
-                        backgroundColor: 'white',
-                    }}
-                >
-                    <option value="">-- Select {t.class} --</option>
-                    {classes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '20px 24px',
-                marginBottom: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
-                    🔎 Search by Roll Number
-                </label>
-                <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search..."
-                    style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        fontSize: '15px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '10px',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                    }}
-                />
-            </div>
-
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                overflow: 'hidden',
-            }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: 0, color: '#1a202c' }}>{t.students} ({filtered.length})</h3>
+            {loading ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
+                    Loading...
                 </div>
-                {filtered.length === 0 ? (
-                    <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
-                        <p style={{ color: '#718096' }}>No {t.students.toLowerCase()} found</p>
-                    </div>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f7fafc' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.class}</th>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.section}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((s) => (
-                                <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
-                                    <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.roll_number}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
-                                    <td style={{ padding: '16px 24px', color: '#718096' }}>{getSectionName(s.section_id)}</td>
-                                </tr>
+            ) : classes.length === 0 ? (
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px',
+                    textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
+                    <p style={{ color: '#718096' }}>No {t.classes.toLowerCase()} assigned yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Admin se contact karo — wo aap ko {t.classes.toLowerCase()} assign karega
+                    </p>
+                </div>
+            ) : (
+                <>
+                    {/* Class select */}
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px',
+                        marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                            🔍 Select {t.class}
+                        </label>
+                        <select
+                            value={selectedClass}
+                            onChange={(e) => setSelectedClass(e.target.value)}
+                            style={{
+                                width: '100%', maxWidth: '300px', padding: '12px 16px',
+                                fontSize: '15px', border: '2px solid #e2e8f0',
+                                borderRadius: '10px', outline: 'none', backgroundColor: 'white',
+                            }}
+                        >
+                            <option value="">-- Select {t.class} --</option>
+                            {classes.map((c) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                        </select>
+                    </div>
+
+                    {/* Search */}
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px',
+                        marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#4a5568' }}>
+                            🔎 Search by Roll Number
+                        </label>
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search..."
+                            style={{
+                                width: '100%', padding: '12px 16px', fontSize: '15px',
+                                border: '2px solid #e2e8f0', borderRadius: '10px',
+                                outline: 'none', boxSizing: 'border-box',
+                            }}
+                        />
+                    </div>
+
+                    {/* Students Table */}
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: '16px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden',
+                    }}>
+                        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                            <h3 style={{ margin: 0, color: '#1a202c' }}>{t.students} ({filtered.length})</h3>
+                        </div>
+                        {filtered.length === 0 ? (
+                            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '64px', marginBottom: '16px' }}>👨‍🎓</div>
+                                <p style={{ color: '#718096' }}>No {t.students.toLowerCase()} found</p>
+                            </div>
+                        ) : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ backgroundColor: '#f7fafc' }}>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>ID</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>Roll No</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.class}</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', color: '#4a5568', fontSize: '13px', textTransform: 'uppercase' }}>{t.section}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filtered.map((s) => (
+                                        <tr key={s.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                                            <td style={{ padding: '16px 24px', color: '#718096' }}>#{s.id}</td>
+                                            <td style={{ padding: '16px 24px', color: '#1a202c', fontWeight: '500' }}>{s.roll_number}</td>
+                                            <td style={{ padding: '16px 24px', color: '#718096' }}>{getClassName(s.class_id)}</td>
+                                            <td style={{ padding: '16px 24px', color: '#718096' }}>{getSectionName(s.section_id)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 };
