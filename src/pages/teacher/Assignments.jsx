@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { useTerms } from '../../utils/terminology';
 
 const TeacherAssignments = () => {
+    const t = useTerms();
     const [classes, setClasses] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [students, setStudents] = useState([]);
@@ -39,17 +41,21 @@ const TeacherAssignments = () => {
         }
     }, [form.class_id]);
 
+    // ✅ FIX: Sirf teacher ki assigned classes
     const fetchData = async () => {
         try {
-            const [c, t] = await Promise.all([api.get('/classes/'), api.get('/teachers/')]);
-            setClasses(c.data);
-            setTeachers(t.data);
+            const [c, tch] = await Promise.all([
+                api.get('/teachers/my-classes'),   // ✅ Assigned classes
+                api.get('/teachers/'),
+            ]);
+            setClasses(Array.isArray(c.data) ? c.data : []);
+            setTeachers(Array.isArray(tch.data) ? tch.data : []);
         } catch (err) {
-            console.error(err);
+            console.error('fetchData error:', err);
+            setClasses([]);
         }
     };
 
-    // ✅ Unique assignments — ek title sirf ek baar
     const fetchAllAssignments = async () => {
         try {
             const res = await api.get('/assignment/');
@@ -57,7 +63,7 @@ const TeacherAssignments = () => {
             const uniqueAssignments = [];
             const seen = new Set();
 
-            res.data.forEach(a => {
+            (res.data || []).forEach(a => {
                 const key = `${a.title}-${a.deadline}-${a.description}`;
                 if (!seen.has(key)) {
                     seen.add(key);
@@ -79,7 +85,7 @@ const TeacherAssignments = () => {
             } catch (e) {
                 res = await api.get(`/subjects/${classId}`);
             }
-            setSubjects(res.data);
+            setSubjects(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setSubjects([]);
         }
@@ -93,7 +99,7 @@ const TeacherAssignments = () => {
             } catch (e) {
                 res = await api.get(`/students/${classId}`);
             }
-            setStudents(res.data);
+            setStudents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             setStudents([]);
         }
@@ -155,7 +161,7 @@ const TeacherAssignments = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Kya aap waqai ye assignment delete karna chahte ho?')) return;
+        if (!window.confirm(`Kya aap waqai ye ${t.assignment || 'assignment'} delete karna chahte ho?`)) return;
 
         try {
             await api.delete(`/assignment/${id}`);
@@ -234,19 +240,14 @@ const TeacherAssignments = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                     <h1 style={{ fontSize: '32px', color: '#1a202c', margin: '0 0 8px 0' }}>Assignments</h1>
-                    <p style={{ color: '#718096', margin: 0 }}>Create assignments for students</p>
+                    <p style={{ color: '#718096', margin: 0 }}>Create assignments for {t.students.toLowerCase()}</p>
                 </div>
                 <button
                     onClick={() => showForm ? handleCancel() : setShowForm(true)}
                     style={{
-                        padding: '12px 24px',
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        color: 'white',
+                        padding: '12px 24px', fontSize: '15px', fontWeight: '600', color: 'white',
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
+                        border: 'none', borderRadius: '10px', cursor: 'pointer',
                         boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
                     }}
                 >
@@ -256,9 +257,7 @@ const TeacherAssignments = () => {
 
             {message.text && (
                 <div style={{
-                    padding: '14px 20px',
-                    borderRadius: '10px',
-                    marginBottom: '20px',
+                    padding: '14px 20px', borderRadius: '10px', marginBottom: '20px',
                     backgroundColor: message.type === 'success' ? '#c6f6d5' : '#fed7d7',
                     color: message.type === 'success' ? '#22543d' : '#c53030',
                 }}>
@@ -266,47 +265,56 @@ const TeacherAssignments = () => {
                 </div>
             )}
 
-            {showForm && (
+            {showForm && classes.length === 0 ? (
                 <div style={{
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
+                    backgroundColor: 'white', borderRadius: '16px', padding: '60px 20px',
+                    textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                     marginBottom: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}>
+                    <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
+                    <p style={{ color: '#718096' }}>No {t.classes.toLowerCase()} assigned yet</p>
+                    <p style={{ color: '#a0aec0', fontSize: '13px', marginTop: '8px' }}>
+                        Admin se contact karo — wo aap ko {t.classes.toLowerCase()} assign karega
+                    </p>
+                </div>
+            ) : showForm && (
+                <div style={{
+                    backgroundColor: 'white', borderRadius: '16px', padding: '24px',
+                    marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}>
                     <h3 style={{ marginTop: 0, color: '#1a202c' }}>
                         {editingId ? 'Edit Assignment' : 'Create New Assignment'}
                     </h3>
                     <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Class</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.class}</label>
                             <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: '', student_id: 'all' })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select Class</option>
+                                <option value="">Select {t.class}</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Subject</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.subject}</label>
                             <select value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="">Select Subject</option>
+                                <option value="">Select {t.subject}</option>
                                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Student</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.student}</label>
                             <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!form.class_id} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: form.class_id ? 'white' : '#f7fafc' }} required>
-                                <option value="all">📚 All Students (Poori Class)</option>
+                                <option value="all">📚 All {t.students} ({students.length})</option>
                                 {students.map((s) => <option key={s.id} value={s.id}>Roll {s.roll_number}</option>)}
                             </select>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>Teacher</label>
+                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#4a5568' }}>{t.teacher}</label>
                             <select value={form.teacher_id} onChange={(e) => setForm({ ...form, teacher_id: e.target.value })} style={{ width: '100%', padding: '12px 14px', fontSize: '14px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }} required>
-                                <option value="">Select Teacher</option>
-                                {teachers.map((t) => <option key={t.id} value={t.id}>{t.qualification} (ID: {t.id})</option>)}
+                                <option value="">Select {t.teacher}</option>
+                                {teachers.map((tch) => <option key={tch.id} value={tch.id}>{tch.qualification} (ID: {tch.id})</option>)}
                             </select>
                         </div>
 
@@ -348,13 +356,9 @@ const TeacherAssignments = () => {
                                         onClick={handleUpload}
                                         disabled={uploading}
                                         style={{
-                                            padding: '12px 24px',
-                                            fontSize: '14px',
-                                            fontWeight: '600',
-                                            color: 'white',
-                                            background: uploading ? '#a0aec0' : '#48bb78',
-                                            border: 'none',
-                                            borderRadius: '8px',
+                                            padding: '12px 24px', fontSize: '14px', fontWeight: '600',
+                                            color: 'white', background: uploading ? '#a0aec0' : '#48bb78',
+                                            border: 'none', borderRadius: '8px',
                                             cursor: uploading ? 'not-allowed' : 'pointer',
                                         }}
                                     >
@@ -367,12 +371,7 @@ const TeacherAssignments = () => {
                                     <p style={{ fontSize: '12px', color: '#22543d', fontWeight: '600', margin: '0 0 4px 0' }}>
                                         ✅ File ready hai
                                     </p>
-                                    <a
-                                        href={form.file_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ fontSize: '12px', color: '#667eea', textDecoration: 'underline' }}
-                                    >
+                                    <a href={form.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#667eea', textDecoration: 'underline' }}>
                                         📎 View File
                                     </a>
                                 </div>
